@@ -327,6 +327,30 @@ a{color:var(--teal)}a:hover{color:var(--teal-dark)}
 .comment-submit:hover{background:var(--teal-dark)}
 .comment-submit:disabled{opacity:.4;pointer-events:none}
 
+/* ── CALENDAR TAB ── */
+.cal-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-nav-btn{background:none;border:1px solid var(--border);border-radius:var(--r);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);transition:all .15s}
+.cal-nav-btn:hover{border-color:var(--teal);color:var(--teal)}
+.cal-month-label{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:var(--text);letter-spacing:.2px;min-width:160px}
+.add-cal-btn{display:inline-flex;align-items:center;gap:6px;background:var(--teal);border:none;border-radius:var(--r);padding:8px 16px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--navy);transition:all .15s}
+.add-cal-btn:hover{background:var(--teal-dark)}
+.cal-grid-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm)}
+.cal-header-row{display:grid;grid-template-columns:repeat(7,1fr);background:var(--navy)}
+.cal-header-day{padding:9px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.65);text-align:left}
+.cal-body{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{min-height:100px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px;background:var(--white);transition:background .1s;cursor:pointer}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell.other-month{background:#fafafa}
+.cal-cell.other-month .cal-date-num{color:#d1d5db}
+.cal-cell.today{background:#f0fafc}
+.cal-cell:hover{background:#f8fbfc}
+.cal-date-num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text2);margin-bottom:4px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;flex-shrink:0}
+.cal-cell.today .cal-date-num{background:var(--teal);color:#fff;font-weight:800}
+.cal-event{font-size:11px;font-weight:600;padding:3px 7px;border-radius:4px;margin-bottom:3px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;background:var(--teal-light);color:var(--teal-dark);border-left:2px solid var(--teal);transition:opacity .1s}
+.cal-event:hover{opacity:.75}
+.cal-event.has-time{border-left-color:var(--amber);background:var(--amber-bg);color:var(--amber-text)}
+
 /* ── MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
@@ -372,71 +396,72 @@ a{color:var(--teal)}a:hover{color:var(--teal-dark)}
 <script src="https://cdn.jsdelivr.net/npm/monday-sdk-js/dist/main.js"></script>
 <script>
 // ── LAUNCH IDENTITY (shown in the nav) ────────────────────────────────────
-var LAUNCH_NAME     = 'Prison Bar 2026';       // e.g. "Prison Bar 2026"
+var LAUNCH_NAME     = 'Prison Bar 2026';
 var LAUNCH_SUBTITLE = 'Port Adelaide Football Club · portstore.com.au';
 
 // ── MONDAY.COM CONFIG ─────────────────────────────────────────────────────
-var BOARD_ID  = 'YOUR_BOARD_ID';               // Main launch board ID
-var SUB_BOARD = 'YOUR_SUB_BOARD_ID';           // Sub-items board ID (for product variants & story bullets)
+var BOARD_ID  = '18412092350';
+var SUB_BOARD = '18412092412';
 
-// ── GROUP IDs — must match your monday board groups ───────────────────────
+// ── GROUP IDs ─────────────────────────────────────────────────────────────
 var G = {
-  story:    'YOUR_STORY_GROUP_ID',       // Overview > Launch Story items
-  timeline: 'YOUR_TIMELINE_GROUP_ID',    // Overview > Key Dates / Timeline cards
-  graphics: 'YOUR_GRAPHICS_GROUP_ID',    // Overview > Graphic Assets
-  resources:'YOUR_RESOURCES_GROUP_ID',   // Overview > Resources / Links
-  products: 'YOUR_PRODUCTS_GROUP_ID',    // Product Details tab
-  shoot:    'YOUR_SHOOT_GROUP_ID',       // Photoshoot tab
-  resources_tab: 'YOUR_RESOURCES_TAB_GROUP_ID', // Resources tab items
-  actions:  'YOUR_ACTIONS_GROUP_ID'      // Actions tab
+  story:         'group_mm34mnxy',  // Overview > Launch Story
+  timeline:      'group_mm342xat',  // Overview > Timeline cards
+  graphics:      'group_mm34ng80',  // Overview > Graphics
+  resources:     'group_mm34j839',  // Overview > Resources / Links
+  products:      'group_mm34jkgw',  // Product Details tab
+  shoot:         'group_mm34gf',    // Photoshoot tab
+  calendar:      'group_mm3hrr45',  // Calendar tab ← new
+  resources_tab: 'group_mm3ht8m',   // Resources tab ← new
+  actions:       'group_mm34z2nb'   // Actions tab
 };
 
-// ── COLUMN IDs — must match your monday board columns ─────────────────────
+// ── COLUMN IDs ────────────────────────────────────────────────────────────
 var C = {
-  // ── Shared / generic ────────────────────────────────────
-  mainText:     'YOUR_MAIN_TEXT_COL',    // Long text (story body, EDM copy etc.)
-  subTitle:     'YOUR_SUBTITLE_COL',     // Short text (card subtitle, section label)
-  label:        'YOUR_LABEL_COL',        // Short text (timeline card label)
-  cardColour:   'YOUR_CARD_COLOUR_COL',  // Text: "teal" | "red" | "amber"
-  notes:        'YOUR_NOTES_COL',        // Short notes / dimension text
-  url:          'YOUR_URL_COL',          // Link column
-  ownerNote:    'YOUR_OWNER_NOTE_COL',   // Text (owner / responsible note on resources)
-  date:         'YOUR_DATE_COL',         // Date column
-  status:       'YOUR_STATUS_COL',       // Text: "open" | "complete" | "in-progress" etc.
-  // ── Products ────────────────────────────────────────────
-  priceAdult:   'YOUR_PRICE_ADULT_COL',  // Numeric
-  priceYouth:   'YOUR_PRICE_YOUTH_COL',  // Numeric
-  urlAdult:     'YOUR_URL_ADULT_COL',    // Link
-  urlYouth:     'YOUR_URL_YOUTH_COL',    // Link
-  description:  'YOUR_DESCRIPTION_COL', // Long text
-  imageUrl:     'YOUR_IMAGE_URL_COL',    // Link (product image URL)
-  sku:          'YOUR_SKU_COL',          // Text (on sub-items)
-  barcode:      'YOUR_BARCODE_COL',      // Text (on sub-items)
-  briefStatus:  'YOUR_BRIEF_STATUS_COL', // Text: "briefed" | "brief-in-progress"
-  // ── Photoshoot ──────────────────────────────────────────
-  time:         'YOUR_TIME_COL',         // Text (shoot time)
-  loc:          'YOUR_LOCATION_COL',     // Text (shoot location)
-  arr:          'YOUR_ARRIVAL_COL',      // Text (arrival time)
-  role:         'YOUR_ROLE_COL',         // Text: "player" | "staff" | "product" | "prop"
-  resp:         'YOUR_RESP_COL',         // Text (responsible person)
-  sNotes:       'YOUR_SHOOT_NOTES_COL',  // Long text (shoot notes)
-  rsUrl:        'YOUR_RUN_SHEET_COL',    // Link (run sheet URL)
-  pnotes:       'YOUR_PERSON_NOTES_COL', // Long text (player notes)
-  // ── Sales Channels ──────────────────────────────────────
-  channelName:  'YOUR_CHANNEL_NAME_COL', // Text (e.g. "BigCommerce")
-  channelStatus:'YOUR_CH_STATUS_COL',    // Text: "live" | "pending" | "tbc"
-  channelUnits: 'YOUR_CH_UNITS_COL',     // Numeric (units allocated)
-  channelNotes: 'YOUR_CH_NOTES_COL',     // Text
-  // ── Content & EDM ───────────────────────────────────────
-  contentStatus:'YOUR_CONTENT_STATUS_COL', // Text: "done" | "open" | "tbc"
-  owner:        'YOUR_OWNER_COL',          // Text (owner name)
-  contentNote:  'YOUR_CONTENT_NOTE_COL',   // Text (extra notes)
-  // ── Actions ─────────────────────────────────────────────
-  assignee:     'YOUR_ASSIGNEE_COL',      // Text (person's name)
-  due:          'YOUR_DUE_DATE_COL',      // Date
-  assignedDate: 'YOUR_ASSIGNED_DATE_COL', // Date
-  comments:     'YOUR_COMMENTS_COL',      // Long text
-  fileUrl:      'YOUR_FILE_URL_COL'       // Link
+  // ── Shared ──────────────────────────────────────────────────────────────
+  mainText:     'long_text_mm344p2g',  // Long text (story body)
+  subTitle:     'text_mm34mfak',       // Sub-section title
+  label:        'text_mm34gzak',       // Timeline card label
+  cardColour:   'text_mm343enr',       // Card colour: "teal" | "red" | "amber"
+  notes:        'text_mm34a70t',       // Short notes / dimensions
+  url:          'link_mm34d2nr',       // Generic URL
+  ownerNote:    'text_mm34y1zv',       // Owner note (resources)
+  date:         'date_mm34dknp',       // Generic date
+  status:       'text_mm34bxwf',       // Status text
+  // ── Products ────────────────────────────────────────────────────────────
+  priceAdult:   'numeric_mm34bwdd',
+  priceYouth:   'numeric_mm34weed',
+  urlAdult:     'link_mm346spp',
+  urlYouth:     'link_mm34ynr1',
+  description:  'long_text_mm34b2n3',
+  imageUrl:     'link_mm345bsm',
+  sku:          'text_mm34wad5',       // Sub-item SKU
+  barcode:      'text_mm348eqz',       // Sub-item barcode
+  briefStatus:  'text_mm34k1c4',
+  // ── Photoshoot ──────────────────────────────────────────────────────────
+  time:         'text_mm34rgr6',
+  loc:          'text_mm34jdzd',
+  arr:          'text_mm346vy0',
+  role:         'text_mm34amje',
+  resp:         'text_mm34gdkz',
+  sNotes:       'long_text_mm34p7ty',
+  rsUrl:        'link_mm348j3r',
+  pnotes:       'long_text_mm34q7bv',
+  // ── Calendar ────────────────────────────────────────────────────────────
+  eventDate:    'date_mm3hdr0g',       // Event date ← new
+  eventTime:    'text_mm3hb6an',       // Event time ← new
+  eventNotes:   'long_text_mm3hpc9t',  // Event notes ← new
+  // ── Resources Tab ───────────────────────────────────────────────────────
+  resType:      'text_mm3h35rm',       // Resource type ← new
+  resAssetKey:  'text_mm3hdw8z',       // Asset key ← new
+  resUrl:       'link_mm3hz9fj',       // Resource URL ← new
+  resLabel:     'text_mm34s1kk',       // Label / title override
+  // ── Actions ─────────────────────────────────────────────────────────────
+  assignee:     'text_mm34gntm',
+  due:          'date_mm34xnt4',
+  assignedDate: 'date_mm341th2',
+  comments:     'long_text_mm34spev',
+  fileUrl:      'link_mm34qas2'
 };
 </script>
 <!-- ═══════════════════════════════════════════════════════════════════
@@ -463,6 +488,7 @@ var C = {
   <button class="tab-btn"        id="btn-products"  onclick="switchTab('products')">Product Details</button>
   <button class="tab-btn"        id="btn-shoot"     onclick="switchTab('shoot')">Photoshoot</button>
   <button class="tab-btn"        id="btn-resources" onclick="switchTab('resources')">Resources</button>
+  <button class="tab-btn"        id="btn-calendar"  onclick="switchTab('calendar')">Calendar</button>
   <button class="tab-btn"        id="btn-actions"   onclick="switchTab('actions')">Actions</button>
 </div>
 
@@ -477,6 +503,7 @@ var C = {
 <div id="tab-products"  class="tab-pane"><div class="container" id="productsContent"></div></div>
 <div id="tab-shoot"     class="tab-pane"><div class="container" id="shootContent"></div></div>
 <div id="tab-resources" class="tab-pane"><div class="container" id="resourcesContent"></div></div>
+<div id="tab-calendar"  class="tab-pane"><div class="container" id="calendarContent"></div></div>
 <div id="tab-actions"   class="tab-pane"><div class="container" id="actionsContent"></div></div>
 
 <!-- TOKEN OVERLAY (browser fallback — not shown inside monday app) -->
@@ -1614,7 +1641,154 @@ function renderActions(g) {
 }
 
 // ════════════════════════════════════════════════════════════════════
-//  TAB 4: RESOURCES
+//  TAB 5: CALENDAR
+// ════════════════════════════════════════════════════════════════════
+
+var calYear  = new Date().getFullYear();
+var calMonth = new Date().getMonth(); // 0-indexed
+var calItems = []; // cached from last render
+
+var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var DAY_NAMES   = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar({ calendar: calItems }); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar({ calendar: calItems }); }
+
+// ── ADD / EDIT EVENT MODAL ────────────────────────────────────────────────
+function openAddEvent(prefillDate) {
+  var dateVal = prefillDate || '';
+  openModal('New Calendar Event',
+    '<div class="form-group"><label>Event Name</label><input type="text" id="fce_name" placeholder="e.g. Prison Bar Launch Day"></div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label>Date</label><input type="date" id="fce_date" value="' + esc(dateVal) + '"></div>'
+    + '<div class="form-group"><label>Time</label><input type="text" id="fce_time" placeholder="e.g. 9:00am"></div>'
+    + '</div>'
+    + '<div class="form-group"><label>Notes</label><textarea id="fce_notes" placeholder="Any additional details…"></textarea></div>',
+    function() {
+      var name = document.getElementById('fce_name').value.trim();
+      if (!name) throw new Error('Event name required');
+      var date  = document.getElementById('fce_date').value;
+      var time  = document.getElementById('fce_time').value.trim();
+      var notes = document.getElementById('fce_notes').value.trim();
+      if (!date) throw new Error('Date required');
+      var cv = {};
+      cv[C.eventDate]  = { date: date };
+      if (time)  cv[C.eventTime]  = time;
+      if (notes) cv[C.eventNotes] = { text: notes };
+      return api(
+        'mutation($bid:ID!,$gid:String!,$n:String!,$cv:JSON!){create_item(board_id:$bid,group_id:$gid,item_name:$n,column_values:$cv){id}}',
+        { bid: BOARD_ID, gid: G.calendar, n: name, cv: JSON.stringify(cv) }
+      );
+    }, false, null, 'Add Event');
+  setTimeout(function() { document.getElementById('fce_name').focus(); }, 50);
+}
+
+function openEditEvent(id) {
+  var item = allItems.find(function(i) { return String(i.id) === String(id); });
+  if (!item) return;
+  var date  = gcv(item, C.eventDate);
+  var time  = gcv(item, C.eventTime);
+  var notes = gcv(item, C.eventNotes);
+  openModal('Edit Event — ' + esc(item.name),
+    '<div class="form-group"><label>Event Name</label><input type="text" id="fce_name" value="' + esc(item.name) + '"></div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label>Date</label><input type="date" id="fce_date" value="' + esc(date) + '"></div>'
+    + '<div class="form-group"><label>Time</label><input type="text" id="fce_time" value="' + esc(time) + '" placeholder="e.g. 9:00am"></div>'
+    + '</div>'
+    + '<div class="form-group"><label>Notes</label><textarea id="fce_notes">' + esc(notes) + '</textarea></div>',
+    function() {
+      var name = document.getElementById('fce_name').value.trim();
+      if (!name) throw new Error('Event name required');
+      var newDate  = document.getElementById('fce_date').value;
+      var newTime  = document.getElementById('fce_time').value.trim();
+      var newNotes = document.getElementById('fce_notes').value.trim();
+      if (!newDate) throw new Error('Date required');
+      var tasks = [];
+      if (name !== item.name) tasks.push(
+        api('mutation($id:ID!,$bid:ID!,$n:String!){change_item_name(item_id:$id,board_id:$bid,name:$n){id}}',
+          { id: id, bid: BOARD_ID, n: name })
+      );
+      var cv = {};
+      cv[C.eventDate]  = { date: newDate };
+      cv[C.eventTime]  = newTime;
+      cv[C.eventNotes] = { text: newNotes };
+      tasks.push(api(
+        'mutation($id:ID!,$bid:ID!,$cv:JSON!){change_multiple_column_values(item_id:$id,board_id:$bid,column_values:$cv){id}}',
+        { id: id, bid: BOARD_ID, cv: JSON.stringify(cv) }
+      ));
+      return Promise.all(tasks);
+    }, true, id, 'Save Changes');
+}
+
+// ── RENDER CALENDAR ───────────────────────────────────────────────────────
+function renderCalendar(g) {
+  calItems = g.calendar || [];
+
+  // Build a date→events map
+  var evtMap = {};
+  calItems.forEach(function(item) {
+    var d = gcv(item, C.eventDate);
+    if (!d) return;
+    if (!evtMap[d]) evtMap[d] = [];
+    evtMap[d].push(item);
+  });
+
+  // Grid setup: start from Monday of the week containing 1st of month
+  var firstDay = new Date(calYear, calMonth, 1);
+  var lastDay  = new Date(calYear, calMonth + 1, 0);
+  // Mon=0 offset
+  var startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
+  var gridStart = new Date(calYear, calMonth, 1 - startDow);
+
+  // Build 6 weeks (42 cells)
+  var cells = '';
+  var today = new Date(); today.setHours(0,0,0,0);
+  for (var i = 0; i < 42; i++) {
+    var d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    var isThisMonth = d.getMonth() === calMonth && d.getFullYear() === calYear;
+    var isToday = d.getTime() === today.getTime();
+    var ymd = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    var cls = 'cal-cell' + (!isThisMonth ? ' other-month' : '') + (isToday ? ' today' : '');
+    var evts = evtMap[ymd] || [];
+    var evtHTML = evts.map(function(item) {
+      var t = gcv(item, C.eventTime);
+      var ecls = 'cal-event' + (t ? ' has-time' : '');
+      var label = t ? t + ' · ' + esc(item.name) : esc(item.name);
+      return '<div class="' + ecls + '" onclick="event.stopPropagation();openEditEvent(' + item.id + ')" title="' + esc(item.name) + '">' + label + '</div>';
+    }).join('');
+    cells += '<div class="' + cls + '" onclick="openAddEvent(\'' + ymd + '\')">'
+      + '<div class="cal-date-num">' + d.getDate() + '</div>'
+      + evtHTML
+      + '</div>';
+  }
+
+  // Total event count this month
+  var monthCount = calItems.filter(function(item) {
+    var d = gcv(item, C.eventDate);
+    if (!d) return false;
+    var dt = new Date(d + 'T00:00:00');
+    return dt.getMonth() === calMonth && dt.getFullYear() === calYear;
+  }).length;
+
+  document.getElementById('calendarContent').innerHTML =
+    '<div class="cal-toolbar">'
+    + '<div class="cal-nav">'
+    + '<button class="cal-nav-btn" onclick="calPrev()">‹</button>'
+    + '<div class="cal-month-label">' + MONTH_NAMES[calMonth] + ' ' + calYear + '</div>'
+    + '<button class="cal-nav-btn" onclick="calNext()">›</button>'
+    + (monthCount ? '<span style="font-size:12px;color:var(--muted);margin-left:4px">' + monthCount + ' event' + (monthCount !== 1 ? 's' : '') + '</span>' : '')
+    + '</div>'
+    + '<button class="add-cal-btn" onclick="openAddEvent(\'\')">＋ Add Event</button>'
+    + '</div>'
+    + '<div class="cal-grid-wrap">'
+    + '<div class="cal-header-row">' + DAY_NAMES.map(function(d) { return '<div class="cal-header-day">' + d + '</div>'; }).join('') + '</div>'
+    + '<div class="cal-body">' + cells + '</div>'
+    + '</div>';
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TAB 6: RESOURCES
 // ════════════════════════════════════════════════════════════════════
 //
 //  Board structure for Resources tab:
@@ -1785,7 +1959,7 @@ function renderResources(g) {
 function render(items) {
   allItems = items;
   bulletMap = {}; subitemMap = {};
-  var grouped = { story:[], timeline:[], graphics:[], resources:[], products:[], shoot:[], resources_tab:[], actions:[] };
+  var grouped = { story:[], timeline:[], graphics:[], resources:[], products:[], shoot:[], resources_tab:[], calendar:[], actions:[] };
   items.forEach(function(item) {
     var gid = item.group ? item.group.id : '';
     if      (gid === G.story)     grouped.story.push(item);
@@ -1795,6 +1969,7 @@ function render(items) {
     else if (gid === G.products)  grouped.products.push(item);
     else if (gid === G.shoot)     grouped.shoot.push(item);
     else if (gid === G.resources_tab) grouped.resources_tab.push(item);
+    else if (gid === G.calendar)      grouped.calendar.push(item);
     else if (gid === G.actions)   grouped.actions.push(item);
     if (item.subitems) {
       item.subitems.forEach(function(s) {
@@ -1812,6 +1987,7 @@ function render(items) {
   renderProducts(grouped);
   renderShoot(grouped);
   renderResources(grouped);
+  renderCalendar(grouped);
   renderActions(grouped);
 }
 
