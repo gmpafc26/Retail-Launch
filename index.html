@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Port Store — Launch Hub</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Condensed:wght@700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1b2a;--teal:#00b5b8;--teal-dark:#009a9c;--teal-light:rgba(0,181,184,.1);
+  --white:#fff;--bg:#f4f5f7;--surface:#fff;
+  --text:#172b4d;--text2:#42526e;--muted:#6b7280;
+  --border:#dfe1e6;--border2:#c1c7d0;
+  --green:#10b981;--green-bg:rgba(16,185,129,.1);--green-text:#065f46;
+  --red:#ef4444;--red-bg:rgba(239,68,68,.1);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--amber-text:#92400e;
+  --shadow-sm:0 1px 2px rgba(9,30,66,.08),0 0 0 1px rgba(9,30,66,.04);
+  --shadow:0 3px 8px rgba(9,30,66,.1),0 0 0 1px rgba(9,30,66,.04);
+  --shadow-md:0 8px 24px rgba(9,30,66,.14),0 0 0 1px rgba(9,30,66,.04);
+  --r:6px;--r-lg:8px;
+}
+html,body{height:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--teal)}a:hover{color:var(--teal-dark)}
+
+/* ── APP SHELL ── */
+.app-shell{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── NAV ── */
+.nav-outer{background:var(--navy);flex-shrink:0}
+.nav{padding:0 24px;max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;height:56px}
+.nav-brand{display:flex;flex-direction:column;justify-content:center}
+.nav-brand h1{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;color:#fff;text-transform:uppercase;letter-spacing:.4px;line-height:1.1}
+.nav-brand p{font-size:10px;color:rgba(0,181,184,.8);letter-spacing:1.2px;text-transform:uppercase;font-weight:500;margin-top:2px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.refresh-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:var(--r);padding:6px 14px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.65);transition:all .15s;white-space:nowrap}
+.refresh-btn:hover{border-color:var(--teal);color:var(--teal);background:rgba(0,181,184,.08)}
+.refresh-btn.loading{opacity:.45;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block}
+.refresh-btn.loading .spin{animation:spin .7s linear infinite}
+
+/* ── TAB BAR ── */
+.tab-bar{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08);padding:0 24px;display:flex;overflow-x:auto;flex-shrink:0}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.42);background:none;border:none;border-bottom:2px solid transparent;padding:13px 18px 11px;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;line-height:1}
+.tab-btn:hover{color:rgba(255,255,255,.82)}
+.tab-btn.active{color:#fff;border-bottom-color:var(--teal)}
+
+/* ── STATUS BAR ── */
+.status-outer{background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0}
+.status-bar{padding:6px 24px;font-size:11px;display:flex;align-items:center;gap:8px;max-width:1280px;margin:0 auto}
+.dot{width:6px;height:6px;border-radius:50%;background:#dfe1e6;flex-shrink:0}
+.dot.live{background:var(--green)}.dot.saving{background:var(--amber)}.dot.error{background:var(--red)}
+.stext{color:var(--muted);font-size:11px}
+
+/* ── CONTENT AREA ── */
+.tab-pane{display:none}.tab-pane.active{display:block}
+.container{padding:28px 24px 80px;max-width:1280px;margin:0 auto}
+
+/* ── PAGE HEADER (inside tabs) ── */
+.page-header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.page-header h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;text-transform:uppercase;color:var(--text);letter-spacing:.2px}
+.page-header p{font-size:13px;color:var(--text2);margin-top:3px}
+
+/* ── SECTION HEADERS ── */
+.section{margin-bottom:40px}
+.sec-meta{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:3px}
+.sec-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sec-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;color:var(--text);flex:1;letter-spacing:.2px}
+.sec-rule{border:none;border-top:2px solid var(--teal);margin-bottom:22px}
+.sec-btns{display:flex;gap:6px}
+.edit-btn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;background:none;border:1px solid var(--border);border-radius:var(--r);padding:5px 12px;cursor:pointer;color:var(--muted);transition:all .15s}
+.edit-btn:hover{border-color:var(--teal);color:var(--teal)}
+.add-btn-sm{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;background:var(--teal);border:1px solid var(--teal);border-radius:var(--r);padding:5px 12px;cursor:pointer;color:var(--navy);transition:all .15s}
+.add-btn-sm:hover{background:var(--teal-dark);border-color:var(--teal-dark)}
+.empty{font-size:13px;color:var(--muted);font-style:italic;padding:8px 0}
+
+/* ── OVERVIEW: STORY ── */
+.story-block{border-left:3px solid var(--teal);padding:0 0 0 20px;margin-bottom:24px;cursor:pointer}
+.story-block:hover{border-left-color:var(--teal-dark)}
+.story-text p{font-size:14px;line-height:1.8;color:var(--text2)}
+.story-text p+p{margin-top:12px}
+.story-bullets{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 22px;margin-top:18px;box-shadow:var(--shadow-sm)}
+.story-bullets-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.story-bullet{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2);line-height:1.6}
+.story-bullet:last-child{border-bottom:none}
+.story-bullet-dash{color:var(--teal);font-weight:700;flex-shrink:0;margin-top:1px}
+.bullet-btns{display:none;gap:4px;margin-left:auto;flex-shrink:0}
+.story-bullet:hover .bullet-btns{display:flex}
+.bullet-btn{background:none;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:11px;color:var(--muted);padding:2px 7px;transition:all .15s}
+.bullet-btn:hover{border-color:var(--teal);color:var(--teal)}
+.bullet-btn.del:hover{border-color:var(--red);color:var(--red)}
+
+/* ── OVERVIEW: TIMELINE ── */
+.timeline-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.tcard{background:var(--white);border:1px solid var(--border);border-top:3px solid var(--teal);border-radius:var(--r-lg);padding:16px 18px;cursor:pointer;transition:box-shadow .15s;position:relative;box-shadow:var(--shadow-sm)}
+.tcard:hover{box-shadow:var(--shadow)}
+.tcard:hover::after{content:'✎';position:absolute;top:8px;right:10px;font-size:12px;color:var(--teal);opacity:.6}
+.tcard.red{border-top-color:var(--red)}
+.tcard.amber{border-top-color:var(--amber)}
+.tcard-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:7px}
+.tcard.red .tcard-label{color:var(--red)}
+.tcard.amber .tcard-label{color:var(--amber)}
+.tcard-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;color:var(--text);margin-bottom:3px;line-height:1.2}
+.tcard-sub{font-size:12px;color:var(--muted);line-height:1.4}
+
+/* ── OVERVIEW: GRAPHICS ── */
+.gtable{width:100%;border-collapse:collapse;border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm)}
+.gtable thead tr{background:var(--navy)}
+.gtable th{padding:10px 16px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.gtable td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13px;background:var(--white);vertical-align:middle;color:var(--text2)}
+.gtable tr:last-child td{border-bottom:none}
+.gtable tr.gr:hover td{background:rgba(0,181,184,.04);cursor:pointer}
+.gtable tr.gr:hover td:first-child{position:relative;color:var(--text)}
+.gtable tr.gr:hover td:first-child::after{content:'✎';position:absolute;top:50%;right:8px;transform:translateY(-50%);font-size:11px;color:var(--teal);opacity:.6}
+.gdim{display:inline-block;background:var(--teal-light);color:var(--teal-dark);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;font-family:'Inter',sans-serif}
+.brief-select{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;border:none;border-radius:20px;padding:4px 22px 4px 10px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;outline:none;transition:all .15s}
+.brief-select.briefed{background-color:var(--green-bg);color:var(--green-text)}
+.brief-select.in-progress{background-color:rgba(107,114,128,.1);color:var(--muted)}
+
+/* ── OVERVIEW: RESOURCES ── */
+.rlist{display:flex;flex-direction:column;gap:10px}
+.rcard{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;cursor:pointer;transition:box-shadow .15s;position:relative;box-shadow:var(--shadow-sm)}
+.rcard:hover{box-shadow:var(--shadow)}
+.rcard:hover::after{content:'✎';position:absolute;top:10px;right:12px;font-size:12px;color:var(--teal);opacity:.6}
+.rcard-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;text-transform:uppercase;color:var(--text);margin-bottom:2px;letter-spacing:.2px}
+.rcard-desc{font-size:12px;color:var(--text2)}
+.rcard-note{font-size:11px;color:var(--amber);margin-top:2px}
+.rcard-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.rcard-btn{display:inline-block;background:var(--navy);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:8px 16px;border-radius:var(--r);text-decoration:none;transition:background .15s}
+.rcard-btn:hover{background:var(--teal-dark);color:#fff}
+.avail-pill{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:20px}
+.avail-pill.available{background:var(--green-bg);color:var(--green-text)}
+.avail-pill.unavailable{background:rgba(107,114,128,.1);color:var(--muted)}
+.avail-dot{width:5px;height:5px;border-radius:50%}
+.avail-pill.available .avail-dot{background:var(--green)}
+.avail-pill.unavailable .avail-dot{background:#9ca3af}
+
+/* ── PRODUCTS ── */
+.pcard{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:24px;position:relative;cursor:pointer;box-shadow:var(--shadow-sm);transition:box-shadow .15s}
+.pcard:hover{box-shadow:var(--shadow)}
+.pcard:hover::after{content:'✎ Edit';position:absolute;top:12px;right:12px;background:rgba(0,181,184,.15);color:var(--teal-dark);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:5px 10px;border-radius:var(--r)}
+.phero{background:#0d1b2a;padding:22px;display:flex;align-items:center;gap:22px}
+.phero img{width:90px;height:90px;object-fit:contain;flex-shrink:0;border-radius:4px}
+.imgph{width:90px;height:90px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:var(--r);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,.2);font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;text-align:center;padding:8px}
+.pprices{display:flex;flex-direction:column;gap:4px}
+.prow{display:flex;align-items:baseline;gap:10px}
+.plabel{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35);min-width:48px}
+.pval{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:var(--teal);line-height:1}
+.ptbc{font-size:12px;color:rgba(255,255,255,.18);font-style:italic}
+.pbody{padding:20px}
+.pname{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;text-transform:uppercase;color:var(--text);margin-bottom:8px;letter-spacing:.2px}
+.pdesc{font-size:13px;line-height:1.7;color:var(--text2);margin-bottom:14px}
+.pdesc p+p{margin-top:8px}
+.plinks{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.lrow{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;flex-wrap:wrap}
+.lbadge{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--navy);padding:3px 8px;border-radius:var(--r);flex-shrink:0}
+.lurl{font-size:12px;font-family:'Inter',monospace;color:var(--teal-dark);flex:1;word-break:break-all}
+.lurl a{color:var(--teal-dark);text-decoration:none}
+.lurl a:hover{text-decoration:underline}
+.cbtn{background:none;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;color:var(--muted);font-size:12px;padding:3px 8px;transition:all .15s}
+.cbtn:hover{border-color:var(--teal);color:var(--teal)}
+.vtbl{width:100%;border-collapse:collapse;font-size:12px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.vtbl th{background:var(--bg);padding:8px 12px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--teal)}
+.vtbl td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text2)}
+.vtbl tr:last-child td{border-bottom:none}
+.vtbl tr:hover td{background:var(--teal-light);cursor:pointer}
+.vtbl tr:hover td:last-child::after{content:'✎';float:right;color:var(--teal);opacity:.6}
+.scell{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;width:64px;color:var(--text)}
+.tbd{font-style:italic;color:#c1c7d0;font-size:11px}
+.vsec{margin-top:6px}
+.vlabel{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.prod-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.prod-nav a{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--white);transition:all .15s;box-shadow:var(--shadow-sm)}
+.prod-nav a:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ── PHOTOSHOOT ── */
+.shoot-hero{background:var(--navy);border-radius:var(--r-lg);padding:22px 26px;margin-bottom:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px;position:relative;box-shadow:var(--shadow)}
+.shoot-hero-item .slabel{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,181,184,.8);margin-bottom:5px}
+.shoot-hero-item .sval{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:#fff;line-height:1.2}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.scard{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:13px 15px;box-shadow:var(--shadow-sm)}
+.scard-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;color:var(--text);margin-bottom:5px}
+.scard-row{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:3px}
+.scard-tag{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#fff;background:var(--navy);padding:2px 7px;border-radius:var(--r);flex-shrink:0}
+.pnote{margin-top:7px;font-size:12px;color:var(--text2);line-height:1.5;border-top:1px solid var(--border);padding-top:7px}
+.stbl{width:100%;border-collapse:collapse;background:var(--white);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.stbl th{background:var(--navy);padding:9px 16px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.stbl td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)}
+.stbl tr:last-child td{border-bottom:none}
+.owner-chip{display:inline-flex;align-items:center;background:var(--teal-light);color:var(--teal-dark);font-size:12px;font-weight:600;padding:2px 8px;border-radius:var(--r)}
+.run-sheets{display:flex;flex-direction:column;gap:8px}
+.rs-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-sm)}
+.rs-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;text-transform:uppercase;color:var(--text);letter-spacing:.2px}
+.rs-link{display:inline-block;background:var(--navy);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:7px 16px;border-radius:var(--r);text-decoration:none;transition:background .15s}
+.rs-link:hover{background:var(--teal-dark);color:#fff}
+.rs-tbc{font-size:12px;color:#c1c7d0;font-style:italic}
+
+/* ── RESOURCES TAB ── */
+.res-links-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:8px}
+.res-link-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:var(--shadow-sm);transition:box-shadow .15s;position:relative}
+.res-link-card:hover{box-shadow:var(--shadow)}
+.res-link-card-left{flex:1;min-width:0}
+.res-link-icon{font-size:22px;margin-bottom:6px;display:block}
+.res-link-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;text-transform:uppercase;color:var(--text);letter-spacing:.2px;margin-bottom:3px}
+.res-link-desc{font-size:12px;color:var(--muted);line-height:1.4}
+.res-btn{display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:8px 16px;border-radius:var(--r);text-decoration:none;transition:background .15s;white-space:nowrap;border:none;cursor:pointer}
+.res-btn:hover{background:var(--teal-dark);color:#fff}
+.res-btn.teal{background:var(--teal);color:var(--navy)}
+.res-btn.teal:hover{background:var(--teal-dark);color:#fff}
+.res-pill-tbc{display:inline-flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;padding:7px 14px;border-radius:20px;background:#f0f0f0;color:#9ca3af;white-space:nowrap}
+.res-pill-tbc::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#c1c7d0;flex-shrink:0}
+.asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.asset-slot{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow .15s}
+.asset-slot:hover{box-shadow:var(--shadow)}
+.asset-slot-head{padding:13px 16px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;justify-content:space-between}
+.asset-slot-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;text-transform:uppercase;color:var(--text);letter-spacing:.2px}
+.asset-slot-tag{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:.8px;text-transform:uppercase;padding:2px 8px;border-radius:20px}
+.asset-tag-live{background:var(--green-bg);color:var(--green-text)}
+.asset-tag-tbc{background:#f0f0f0;color:#9ca3af}
+.asset-slot-body{padding:13px 16px}
+.asset-preview{width:100%;height:110px;border-radius:var(--r);background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden}
+.asset-preview img{width:100%;height:100%;object-fit:cover}
+.asset-preview-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.asset-preview-empty span{font-size:24px}
+.asset-preview-empty p{font-size:11px;font-weight:600;color:#c1c7d0;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px}
+.asset-drop{border:2px dashed var(--border);border-radius:var(--r);padding:14px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:10px}
+.asset-drop:hover,.asset-drop.dragover{border-color:var(--teal);background:var(--teal-light)}
+.asset-drop-label{font-size:12px;color:var(--muted);line-height:1.5}
+.asset-drop-label strong{color:var(--teal);font-weight:600;cursor:pointer}
+.asset-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.asset-btn{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;padding:6px 12px;border-radius:var(--r);cursor:pointer;transition:all .15s;border:none;white-space:nowrap}
+.asset-btn-dl{background:var(--teal);color:var(--navy)}
+.asset-btn-dl:hover{background:var(--teal-dark);color:#fff}
+.asset-btn-edit{background:none;border:1px solid var(--border);color:var(--muted)}
+.asset-btn-edit:hover{border-color:var(--teal);color:var(--teal)}
+.asset-btn-remove{background:none;border:1px solid rgba(239,68,68,.25);color:var(--red)}
+.asset-btn-remove:hover{background:var(--red-bg)}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(9,30,66,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--r-lg);width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(9,30,66,.24)}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-head h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;text-transform:uppercase;color:var(--text);letter-spacing:.2px}
+.modal-close{background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);line-height:1;padding:4px;border-radius:var(--r);transition:background .15s}
+.modal-close:hover{background:var(--bg)}
+.modal-body{padding:18px 20px;overflow-y:auto;flex:1}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg);border-radius:0 0 var(--r-lg) var(--r-lg)}
+.modal-foot-right{display:flex;gap:8px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;border:2px solid var(--border);border-radius:var(--r);padding:8px 11px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:var(--white);transition:border .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,181,184,.12)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rep-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:10px;position:relative}
+.rep-item.is-deleted{opacity:.35;pointer-events:none}
+.rep-del-btn{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:#c1c7d0;font-size:13px;padding:2px 5px;border-radius:var(--r);transition:all .15s}
+.rep-del-btn:hover{color:var(--red);background:var(--red-bg)}
+.btn-primary{background:var(--teal);color:var(--navy);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.8px;text-transform:uppercase;padding:9px 20px;border:none;border-radius:var(--r);cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-primary:disabled{opacity:.5;pointer-events:none}
+.btn-cancel{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.8px;text-transform:uppercase;padding:9px 16px;border-radius:var(--r);cursor:pointer;transition:all .15s}
+.btn-cancel:hover{border-color:var(--border2);color:var(--text)}
+.btn-danger{background:none;border:1px solid rgba(239,68,68,.25);color:var(--red);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.8px;text-transform:uppercase;padding:9px 14px;border-radius:var(--r);cursor:pointer;transition:all .15s}
+.btn-danger:hover{background:var(--red-bg);border-color:var(--red)}
+.save-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:#065f46;color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;font-weight:500;opacity:0;transition:all .2s;pointer-events:none;z-index:999;box-shadow:var(--shadow-md)}
+.save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.save-toast.err{background:var(--red)} */
+.act-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.act-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.act-filters label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.fsel{border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);background:var(--white);min-width:130px}
+.fsel:focus{outline:none;border-color:var(--teal)}
+.act-stats{display:flex;gap:20px}
+.act-stat{text-align:center}
+.act-stat-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;line-height:1}
+.act-stat-num.s-open{color:var(--teal)}
+.act-stat-num.s-inprogress{color:var(--amber)}
+.act-stat-num.s-complete{color:var(--green)}
+.act-stat-lbl{font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.add-action-btn{background:var(--teal);border:none;border-radius:6px;padding:9px 20px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--navy);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.add-action-btn:hover{background:var(--teal-dark)}
+
+/* action card */
+.act-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;transition:box-shadow .15s;border-left:4px solid var(--border)}
+.act-card:hover{box-shadow:0 3px 16px rgba(0,0,0,.08)}
+.act-card.s-open{border-left-color:var(--teal)}
+.act-card.s-inprogress{border-left-color:var(--amber)}
+.act-card.s-complete{border-left-color:var(--green);opacity:.6}
+.act-card-top{padding:16px 18px;display:flex;align-items:flex-start;gap:14px;cursor:pointer}
+.act-av{width:36px;height:36px;border-radius:50%;background:var(--navy);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.act-card.s-complete .act-av{background:#9ca3af}
+.act-card.s-inprogress .act-av{background:var(--amber)}
+.act-body{flex:1;min-width:0}
+.act-title{font-weight:600;font-size:15px;color:var(--text);line-height:1.4;margin-bottom:6px}
+.act-card.s-complete .act-title{text-decoration:line-through;color:var(--muted)}
+.act-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.act-assignee-chip{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;color:var(--navy);background:rgba(13,27,42,.07);padding:3px 10px;border-radius:20px}
+.badge-due{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:.5px;padding:3px 9px;border-radius:20px;background:rgba(245,158,11,.12);color:#92400e}
+.badge-due.overdue{background:rgba(239,68,68,.12);color:var(--red)}
+.act-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+/* status pill — 3 states */
+.st-pill{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;border:none;border-radius:20px;padding:6px 14px 6px 10px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;outline:none;transition:all .15s}
+.st-pill.open{background-color:rgba(0,181,184,.12);color:var(--teal-dark)}
+.st-pill.inprogress{background-color:rgba(245,158,11,.14);color:#92400e}
+.st-pill.complete{background-color:rgba(16,185,129,.14);color:#065f46}
+.act-edit-btn{background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 11px;transition:all .15s}
+.act-edit-btn:hover{border-color:var(--teal);color:var(--teal)}
+
+/* comment thread */
+.act-thread{border-top:1px solid var(--border);background:#f9fbfb;padding:14px 18px 14px 68px}
+.thread-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.comment-list{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.comment-bubble{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
+.comment-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.comment-author{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;color:var(--navy)}
+.comment-time{font-size:11px;color:var(--muted)}
+.comment-text{font-size:13px;color:#374151;line-height:1.6;white-space:pre-wrap}
+.comment-input-row{display:flex;gap:8px;align-items:flex-end}
+.comment-input{flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:'Barlow',sans-serif;font-size:13px;resize:none;min-height:38px;max-height:120px;transition:border .15s;background:var(--white)}
+.comment-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,181,184,.1)}
+.comment-submit{background:var(--teal);border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--navy);white-space:nowrap;flex-shrink:0;transition:all .15s}
+.comment-submit:hover{background:var(--teal-dark)}
+.comment-submit:disabled{opacity:.4;pointer-events:none}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:10px;width:100%;max-width:540px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-head h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;color:var(--text)}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);line-height:1;padding:4px}
+.modal-body{padding:20px 22px;overflow-y:auto;flex:1}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-foot-right{display:flex;gap:10px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);background:var(--white);transition:border .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,181,184,.1)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rep-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:10px;position:relative}
+.rep-item.is-deleted{opacity:.35;pointer-events:none}
+.rep-del-btn{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:#d1d5db;font-size:13px;padding:2px 5px}
+.rep-del-btn:hover{color:var(--red)}
+.btn-primary{background:var(--navy);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:10px 22px;border:none;border-radius:4px;cursor:pointer}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-primary:disabled{opacity:.5;pointer-events:none}
+.btn-cancel{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:10px 18px;border-radius:4px;cursor:pointer}
+.btn-danger{background:none;border:1px solid rgba(239,68,68,.3);color:var(--red);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:10px 14px;border-radius:4px;cursor:pointer}
+.btn-danger:hover{background:rgba(239,68,68,.07)}
+.save-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(12px);background:#065f46;color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;opacity:0;transition:all .25s;pointer-events:none;z-index:999}
+.save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.save-toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CONFIG — swap these values for each new launch
+     1. Create your monday.com board based on the Launch Hub template
+     2. Paste the board ID and group/column IDs below
+     3. Host index.html on GitHub Pages
+     4. Register as a monday Developer App (Board View) → paste GitHub Pages URL
+     Auth is handled automatically by the monday SDK when running inside the app.
+     When opened directly in a browser (for testing), you'll be prompted for your API token once.
+     ═══════════════════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/monday-sdk-js/dist/main.js"></script>
+<script>
+// ── LAUNCH IDENTITY (shown in the nav) ────────────────────────────────────
+var LAUNCH_NAME     = 'Prison Bar 2026';       // e.g. "Prison Bar 2026"
+var LAUNCH_SUBTITLE = 'Port Adelaide Football Club · portstore.com.au';
+
+// ── MONDAY.COM CONFIG ─────────────────────────────────────────────────────
+var BOARD_ID  = 'YOUR_BOARD_ID';               // Main launch board ID
+var SUB_BOARD = 'YOUR_SUB_BOARD_ID';           // Sub-items board ID (for product variants & story bullets)
+
+// ── GROUP IDs — must match your monday board groups ───────────────────────
+var G = {
+  story:    'YOUR_STORY_GROUP_ID',       // Overview > Launch Story items
+  timeline: 'YOUR_TIMELINE_GROUP_ID',    // Overview > Key Dates / Timeline cards
+  graphics: 'YOUR_GRAPHICS_GROUP_ID',    // Overview > Graphic Assets
+  resources:'YOUR_RESOURCES_GROUP_ID',   // Overview > Resources / Links
+  products: 'YOUR_PRODUCTS_GROUP_ID',    // Product Details tab
+  shoot:    'YOUR_SHOOT_GROUP_ID',       // Photoshoot tab
+  resources_tab: 'YOUR_RESOURCES_TAB_GROUP_ID', // Resources tab items
+  actions:  'YOUR_ACTIONS_GROUP_ID'      // Actions tab
+};
+
+// ── COLUMN IDs — must match your monday board columns ─────────────────────
+var C = {
+  // ── Shared / generic ────────────────────────────────────
+  mainText:     'YOUR_MAIN_TEXT_COL',    // Long text (story body, EDM copy etc.)
+  subTitle:     'YOUR_SUBTITLE_COL',     // Short text (card subtitle, section label)
+  label:        'YOUR_LABEL_COL',        // Short text (timeline card label)
+  cardColour:   'YOUR_CARD_COLOUR_COL',  // Text: "teal" | "red" | "amber"
+  notes:        'YOUR_NOTES_COL',        // Short notes / dimension text
+  url:          'YOUR_URL_COL',          // Link column
+  ownerNote:    'YOUR_OWNER_NOTE_COL',   // Text (owner / responsible note on resources)
+  date:         'YOUR_DATE_COL',         // Date column
+  status:       'YOUR_STATUS_COL',       // Text: "open" | "complete" | "in-progress" etc.
+  // ── Products ────────────────────────────────────────────
+  priceAdult:   'YOUR_PRICE_ADULT_COL',  // Numeric
+  priceYouth:   'YOUR_PRICE_YOUTH_COL',  // Numeric
+  urlAdult:     'YOUR_URL_ADULT_COL',    // Link
+  urlYouth:     'YOUR_URL_YOUTH_COL',    // Link
+  description:  'YOUR_DESCRIPTION_COL', // Long text
+  imageUrl:     'YOUR_IMAGE_URL_COL',    // Link (product image URL)
+  sku:          'YOUR_SKU_COL',          // Text (on sub-items)
+  barcode:      'YOUR_BARCODE_COL',      // Text (on sub-items)
+  briefStatus:  'YOUR_BRIEF_STATUS_COL', // Text: "briefed" | "brief-in-progress"
+  // ── Photoshoot ──────────────────────────────────────────
+  time:         'YOUR_TIME_COL',         // Text (shoot time)
+  loc:          'YOUR_LOCATION_COL',     // Text (shoot location)
+  arr:          'YOUR_ARRIVAL_COL',      // Text (arrival time)
+  role:         'YOUR_ROLE_COL',         // Text: "player" | "staff" | "product" | "prop"
+  resp:         'YOUR_RESP_COL',         // Text (responsible person)
+  sNotes:       'YOUR_SHOOT_NOTES_COL',  // Long text (shoot notes)
+  rsUrl:        'YOUR_RUN_SHEET_COL',    // Link (run sheet URL)
+  pnotes:       'YOUR_PERSON_NOTES_COL', // Long text (player notes)
+  // ── Sales Channels ──────────────────────────────────────
+  channelName:  'YOUR_CHANNEL_NAME_COL', // Text (e.g. "BigCommerce")
+  channelStatus:'YOUR_CH_STATUS_COL',    // Text: "live" | "pending" | "tbc"
+  channelUnits: 'YOUR_CH_UNITS_COL',     // Numeric (units allocated)
+  channelNotes: 'YOUR_CH_NOTES_COL',     // Text
+  // ── Content & EDM ───────────────────────────────────────
+  contentStatus:'YOUR_CONTENT_STATUS_COL', // Text: "done" | "open" | "tbc"
+  owner:        'YOUR_OWNER_COL',          // Text (owner name)
+  contentNote:  'YOUR_CONTENT_NOTE_COL',   // Text (extra notes)
+  // ── Actions ─────────────────────────────────────────────
+  assignee:     'YOUR_ASSIGNEE_COL',      // Text (person's name)
+  due:          'YOUR_DUE_DATE_COL',      // Date
+  assignedDate: 'YOUR_ASSIGNED_DATE_COL', // Date
+  comments:     'YOUR_COMMENTS_COL',      // Long text
+  fileUrl:      'YOUR_FILE_URL_COL'       // Link
+};
+</script>
+<!-- ═══════════════════════════════════════════════════════════════════
+     END CONFIG
+     ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="nav-outer">
+  <div class="nav">
+    <div class="nav-brand">
+      <h1 id="navTitle">Port Store — Launch Hub</h1>
+      <p id="navSubtitle">Loading…</p>
+    </div>
+    <div class="nav-right">
+      <button class="refresh-btn" id="rbtn" onclick="reload()">
+        <span class="spin">&#8635;</span> Refresh
+      </button>
+      <button class="refresh-btn" id="clearTokenBtn" onclick="clearToken()" style="display:none" title="Clear saved API token">Token ✕</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="btn-overview"  onclick="switchTab('overview')">Launch Overview</button>
+  <button class="tab-btn"        id="btn-products"  onclick="switchTab('products')">Product Details</button>
+  <button class="tab-btn"        id="btn-shoot"     onclick="switchTab('shoot')">Photoshoot</button>
+  <button class="tab-btn"        id="btn-resources" onclick="switchTab('resources')">Resources</button>
+  <button class="tab-btn"        id="btn-actions"   onclick="switchTab('actions')">Actions</button>
+</div>
+
+<div class="status-outer">
+  <div class="status-bar">
+    <div class="dot" id="sdot"></div>
+    <span class="stext" id="stxt">Loading…</span>
+  </div>
+</div>
+
+<div id="tab-overview"  class="tab-pane active"><div class="container" id="overviewContent"></div></div>
+<div id="tab-products"  class="tab-pane"><div class="container" id="productsContent"></div></div>
+<div id="tab-shoot"     class="tab-pane"><div class="container" id="shootContent"></div></div>
+<div id="tab-resources" class="tab-pane"><div class="container" id="resourcesContent"></div></div>
+<div id="tab-actions"   class="tab-pane"><div class="container" id="actionsContent"></div></div>
+
+<!-- TOKEN OVERLAY (browser fallback — not shown inside monday app) -->
+<div id="tokenOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:10px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+    <div style="background:var(--navy);padding:20px 24px;border-bottom:3px solid var(--teal)">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;color:#fff;text-transform:uppercase;letter-spacing:.5px">monday.com API Token</div>
+      <div style="font-size:11px;color:var(--teal);margin-top:3px;letter-spacing:1px;text-transform:uppercase">Required for direct browser access</div>
+    </div>
+    <div style="padding:22px 24px">
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">
+        You're viewing this outside of monday.com. Enter your API token to connect.<br>
+        <strong style="color:var(--text)">Inside monday</strong> → no token needed, auth is automatic.
+      </p>
+      <div style="margin-bottom:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">API Token</div>
+      <input id="tokenInput" type="password" placeholder="Paste your monday API v2 token…"
+        style="width:100%;border:1px solid var(--border);border-radius:4px;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);margin-bottom:4px"
+        onkeydown="if(event.key==='Enter')saveToken()">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:18px">Profile picture → Developers → API v2 Token → Copy</div>
+      <button onclick="saveToken()"
+        style="width:100%;background:var(--navy);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;padding:12px;border:none;border-radius:4px;cursor:pointer">
+        Connect
+      </button>
+    </div>
+  </div>
+</div>
+<style>#tokenOverlay.open{display:flex}</style>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Edit</h2>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn-danger" id="modalDelBtn" style="display:none" onclick="delItem()">Delete</button>
+      <div class="modal-foot-right">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modalSaveBtn" onclick="saveModal()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="save-toast" id="toast"></div>
+
+<script>
+// ── RUNTIME STATE ─────────────────────────────────────────────────────────
+var allItems    = [];
+var bulletMap   = {};
+var subitemMap  = {};
+var pendingSave = null;
+var delItemId   = null;
+var editingActionId = null;
+var activeTab   = 'overview';
+
+// ── MONDAY SDK + TOKEN FALLBACK ───────────────────────────────────────────
+// Inside monday (Board View app): SDK handles auth automatically — no token needed.
+// Direct browser (testing): prompts once for your API token, saves to localStorage.
+var mondayClient = window.mondaySdk ? window.mondaySdk() : null;
+if (mondayClient) { try { mondayClient.setApiVersion('2024-01'); } catch(e) {} }
+
+function api(q, v) {
+  var body = JSON.stringify({ query: q, variables: v || {} });
+  // ── SDK path (inside monday iFrame app) ──────────────────
+  if (mondayClient) {
+    return mondayClient.api(q, { variables: v || {} })
+      .then(function(r) {
+        if (r.errors && r.errors.length) throw new Error(r.errors[0].message);
+        // SDK wraps response differently — normalise to { data: ... }
+        return r.data !== undefined ? { data: r.data } : r;
+      });
+  }
+  // ── Direct browser fallback (testing) ────────────────────
+  var token = localStorage.getItem('ps_launch_hub_token') || '';
+  if (!token) {
+    showTokenOverlay();
+    return Promise.reject(new Error('No API token — enter your token to continue.'));
+  }
+  return fetch('https://api.monday.com/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': token, 'API-Version': '2024-01' },
+    body: body
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(r) {
+    if (r.errors && r.errors.length) throw new Error(r.errors[0].message);
+    return r;
+  });
+}
+
+function showTokenOverlay() {
+  document.getElementById('tokenOverlay').classList.add('open');
+}
+function saveToken() {
+  var t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  localStorage.setItem('ps_launch_hub_token', t);
+  document.getElementById('tokenOverlay').classList.remove('open');
+  loadData();
+}
+function clearToken() {
+  localStorage.removeItem('ps_launch_hub_token');
+  toast('Token cleared — reload to re-enter');
+}
+
+function setCol(itemId, boardId, colId, val) {
+  var cv = {};
+  if (colId === C.description || colId === C.sNotes || colId === C.comments || colId === C.pnotes || colId === C.mainText) {
+    cv[colId] = { text: val };
+  } else if (colId.indexOf('link_') === 0 || colId === C.url || colId === C.urlAdult || colId === C.urlYouth || colId === C.imageUrl || colId === C.rsUrl || colId === C.fileUrl) {
+    cv[colId] = (!val || val === '') ? null : { url: val, text: val };
+  } else if (colId.indexOf('numeric_') === 0 || colId === C.priceAdult || colId === C.priceYouth || colId === C.channelUnits) {
+    cv[colId] = val === '' ? null : parseFloat(val);
+  } else if (colId === C.date || colId === C.due || colId === C.assignedDate) {
+    cv[colId] = { date: val };
+  } else {
+    cv[colId] = val;
+  }
+  return api(
+    'mutation($id:ID!,$bid:ID!,$cv:JSON!){change_multiple_column_values(item_id:$id,board_id:$bid,column_values:$cv){id}}',
+    { id: itemId, bid: boardId, cv: JSON.stringify(cv) }
+  );
+}
+
+function rename(id, bid, name) {
+  return api(
+    'mutation($id:ID!,$bid:ID!,$n:String!){change_item_name(item_id:$id,board_id:$bid,name:$n){id}}',
+    { id: id, bid: bid, n: name }
+  );
+}
+
+function createItem(gid, name, colVals) {
+  return api(
+    'mutation($bid:ID!,$gid:String!,$n:String!,$cv:JSON!){create_item(board_id:$bid,group_id:$gid,item_name:$n,column_values:$cv){id name}}',
+    { bid: BOARD_ID, gid: gid, n: name, cv: JSON.stringify(colVals || {}) }
+  ).then(function(r) {
+    // Normalise: SDK returns { create_item: {...} }, fetch returns { data: { create_item: {...} } }
+    return r.data ? r : { data: r };
+  });
+}
+
+function deleteItemApi(id) {
+  return api('mutation($id:ID!){delete_item(item_id:$id){id}}', { id: id });
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────
+function setStatus(s, msg) {
+  var d = document.getElementById('sdot'), t = document.getElementById('stxt');
+  d.className = 'dot' + (s === 'live' ? ' live' : s === 'saving' ? ' saving' : s === 'error' ? ' error' : '');
+  t.textContent = msg || (s === 'live' ? 'Loaded' : s === 'saving' ? 'Saving…' : s === 'error' ? 'Error' : 'Loading…');
+}
+
+function toast(msg, err) {
+  var t = document.getElementById('toast');
+  t.textContent = (err ? '✗ ' : '✓ ') + msg;
+  t.className = 'save-toast show' + (err ? ' err' : '');
+  setTimeout(function() { t.className = 'save-toast'; }, 2500);
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function gcv(item, id) {
+  if (!item || !item.column_values) return '';
+  for (var i = 0; i < item.column_values.length; i++) {
+    if (item.column_values[i].id === id) {
+      var c = item.column_values[i], t = c.text ? String(c.text) : '', v = c.value ? String(c.value) : '';
+      if (id === C.url || id === C.urlAdult || id === C.urlYouth || id === C.imageUrl || id === C.rsUrl || id === C.fileUrl || id.indexOf('link_') === 0) {
+        var hi = t.indexOf('https://'); if (hi === -1) hi = t.indexOf('http://');
+        if (hi !== -1) { var sp = t.indexOf(' ', hi); return sp === -1 ? t.substring(hi) : t.substring(hi, sp); }
+        return t;
+      }
+      if (id === C.mainText || id === C.description || id === C.sNotes || id === C.comments || id === C.pnotes || id.indexOf('long_text') === 0) {
+        if (v && v !== 'null') { try { var p = JSON.parse(v); return typeof p === 'string' ? p : (p && p.text ? String(p.text) : t); } catch(e) { return v; } }
+        return t;
+      }
+      return t;
+    }
+  }
+  return '';
+}
+
+function fmtDate(s) {
+  if (!s) return 'TBC';
+  try { return new Date(s + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' }); } catch(e) { return s; }
+}
+function fmtDateShort(s) {
+  if (!s) return null;
+  try { return new Date(s + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }); } catch(e) { return s; }
+}
+function isOverdue(s) {
+  if (!s) return false;
+  try { return new Date(s + 'T00:00:00') < new Date(); } catch(e) { return false; }
+}
+function initials(n) {
+  if (!n) return '?';
+  var p = n.trim().split(/\s+/);
+  return p.length === 1 ? p[0].charAt(0).toUpperCase() : (p[0].charAt(0) + p[p.length-1].charAt(0)).toUpperCase();
+}
+function getSnap(groupId) { return allItems.filter(function(i) { return i.group && i.group.id === groupId; }); }
+function getItem(id) {
+  var sid = String(id);
+  return allItems.find(function(i) { return String(i.id) === sid; }) || { id: sid, name: '', column_values: [], subitems: [] };
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────
+function switchTab(key) {
+  document.getElementById('tab-' + activeTab).classList.remove('active');
+  document.getElementById('btn-' + activeTab).classList.remove('active');
+  document.getElementById('tab-' + key).classList.add('active');
+  document.getElementById('btn-' + key).classList.add('active');
+  activeTab = key;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openModal(title, body, saveFn, showDel, delId, saveLabel) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalSaveBtn').textContent = saveLabel || 'Save';
+  document.getElementById('modalDelBtn').style.display = showDel ? 'block' : 'none';
+  delItemId = delId || null;
+  pendingSave = saveFn;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  pendingSave = null;
+  delItemId = null;
+}
+function saveModal() {
+  if (!pendingSave) return;
+  var btn = document.getElementById('modalSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…'; setStatus('saving');
+  Promise.resolve(pendingSave()).then(function() {
+    btn.disabled = false; closeModal(); toast('Saved'); setStatus('live'); loadData();
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = 'Save';
+    toast('Failed: ' + e.message, true); setStatus('error');
+  });
+}
+function delItem() {
+  if (!delItemId) return;
+  if (!confirm('Delete this item?')) return;
+  deleteItemApi(delItemId).then(function() { closeModal(); toast('Deleted'); loadData(); });
+}
+function toggleDel(el) {
+  el.classList.toggle('is-deleted');
+  el.querySelectorAll('input,textarea,select').forEach(function(i) { i.disabled = el.classList.contains('is-deleted'); });
+}
+function cp(txt, btn) {
+  navigator.clipboard.writeText(txt).then(function() {
+    if (btn) { var o = btn.innerHTML; btn.innerHTML = '✓'; setTimeout(function() { btn.innerHTML = o; }, 1500); }
+    toast('Copied');
+  });
+}
+
+// ── SECTION HEADER HELPER ─────────────────────────────────────────────────
+function secHead(num, tag, title, editCall, addCall) {
+  var btns = '<div class="sec-btns">';
+  if (editCall) btns += '<button class="edit-btn" onclick="' + editCall + '">✎ Edit</button>';
+  if (addCall)  btns += '<button class="add-btn-sm" onclick="' + addCall + '">+ Add</button>';
+  btns += '</div>';
+  return '<div class="sec-meta">' + num + ' / ' + tag + '</div>'
+    + '<div class="sec-header"><div class="sec-title">' + title + '</div>' + btns + '</div>'
+    + '<hr class="sec-rule">';
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TAB 1: LAUNCH OVERVIEW
+// ════════════════════════════════════════════════════════════════════
+function editStory(id) {
+  var item = getItem(id);
+  var main = gcv(item, C.mainText), sub = gcv(item, C.subTitle);
+  openModal('Edit Story',
+    '<div class="form-group"><label>Main Text (use double line breaks for paragraphs)</label><textarea id="fs_main" style="min-height:160px">' + esc(main) + '</textarea></div>'
+    + '<div class="form-group"><label>Bullet Section Heading</label><input type="text" id="fs_sub" value="' + esc(sub) + '"></div>',
+    function() {
+      return Promise.all([
+        setCol(id, BOARD_ID, C.mainText, document.getElementById('fs_main').value),
+        setCol(id, BOARD_ID, C.subTitle, document.getElementById('fs_sub').value)
+      ]);
+    }, false, null, 'Save Changes');
+}
+function addBullet(pid) {
+  openModal('Add Bullet',
+    '<div class="form-group"><label>Bullet Text</label><input type="text" id="fb_text" placeholder="e.g. The design references..."></div>',
+    function() {
+      var text = document.getElementById('fb_text').value.trim();
+      if (!text) throw new Error('Text required');
+      return api('mutation($pid:ID!,$n:String!){create_subitem(parent_item_id:$pid,item_name:$n){id}}', { pid: pid, n: text });
+    }, false, null, 'Add Bullet');
+  setTimeout(function() { document.getElementById('fb_text').focus(); }, 50);
+}
+function editBullet(sid) {
+  sid = String(sid);
+  var text = bulletMap[sid] || '';
+  openModal('Edit Bullet',
+    '<div class="form-group"><label>Bullet Text</label><input type="text" id="fbe_text" value="' + esc(text) + '"></div>',
+    function() {
+      var t = document.getElementById('fbe_text').value.trim();
+      if (!t) throw new Error('Text required');
+      return api('mutation($id:ID!,$bid:ID!,$n:String!){change_item_name(item_id:$id,board_id:$bid,name:$n){id}}',
+        { id: sid, bid: SUB_BOARD, n: t });
+    }, true, sid, 'Save');
+  setTimeout(function() { var e = document.getElementById('fbe_text'); if (e) { e.focus(); e.select(); } }, 50);
+}
+function deleteBullet(sid) {
+  if (!confirm('Remove this bullet?')) return;
+  deleteItemApi(sid).then(function() { toast('Removed'); loadData(); });
+}
+function editTimeline(id) {
+  var item = getItem(id);
+  var label = gcv(item, C.label), colour = gcv(item, C.cardColour), sub = gcv(item, C.subTitle);
+  openModal('Edit Timeline Card',
+    '<div class="form-group"><label>Title</label><input type="text" id="ft_name" value="' + esc(item.name) + '"></div>'
+    + '<div class="form-row"><div class="form-group"><label>Label</label><input type="text" id="ft_label" value="' + esc(label) + '"></div>'
+    + '<div class="form-group"><label>Colour</label><select id="ft_colour">'
+    + '<option value="teal"' + (colour !== 'red' && colour !== 'amber' ? ' selected' : '') + '>Teal</option>'
+    + '<option value="amber"' + (colour === 'amber' ? ' selected' : '') + '>Amber</option>'
+    + '<option value="red"' + (colour === 'red' ? ' selected' : '') + '>Red</option>'
+    + '</select></div></div>'
+    + '<div class="form-group"><label>Subtitle / Detail</label><input type="text" id="ft_sub" value="' + esc(sub) + '"></div>',
+    function() {
+      var tasks = [];
+      var n = document.getElementById('ft_name').value.trim();
+      if (n && n !== item.name) tasks.push(rename(id, BOARD_ID, n));
+      tasks.push(setCol(id, BOARD_ID, C.label, document.getElementById('ft_label').value.trim()));
+      tasks.push(setCol(id, BOARD_ID, C.subTitle, document.getElementById('ft_sub').value.trim()));
+      tasks.push(setCol(id, BOARD_ID, C.cardColour, document.getElementById('ft_colour').value));
+      return Promise.all(tasks);
+    }, true, id, 'Save Changes');
+}
+function addTimeline() {
+  openModal('Add Timeline Card',
+    '<div class="form-group"><label>Title</label><input type="text" id="fat_name" placeholder="e.g. Launch Day"></div>'
+    + '<div class="form-row"><div class="form-group"><label>Label</label><input type="text" id="fat_label" placeholder="e.g. AFL Round 10"></div>'
+    + '<div class="form-group"><label>Colour</label><select id="fat_colour"><option value="teal">Teal</option><option value="amber">Amber</option><option value="red">Red</option></select></div></div>'
+    + '<div class="form-group"><label>Subtitle</label><input type="text" id="fat_sub"></div>',
+    function() {
+      var n = document.getElementById('fat_name').value.trim();
+      if (!n) throw new Error('Title required');
+      var cv = {};
+      cv[C.label] = document.getElementById('fat_label').value.trim();
+      cv[C.subTitle] = document.getElementById('fat_sub').value.trim();
+      cv[C.cardColour] = document.getElementById('fat_colour').value;
+      return createItem(G.timeline, n, cv);
+    }, false, null, 'Add Card');
+  setTimeout(function() { document.getElementById('fat_name').focus(); }, 50);
+}
+function editGraphics(id) {
+  var item = getItem(id);
+  var dim = gcv(item, C.notes), notes = gcv(item, C.subTitle), bs = gcv(item, C.briefStatus) || 'brief-in-progress';
+  openModal('Edit Graphic Asset',
+    '<div class="form-group"><label>Asset Name</label><input type="text" id="fg_name" value="' + esc(item.name) + '"></div>'
+    + '<div class="form-row"><div class="form-group"><label>Dimensions</label><input type="text" id="fg_dim" value="' + esc(dim) + '"></div>'
+    + '<div class="form-group"><label>Notes</label><input type="text" id="fg_notes" value="' + esc(notes) + '"></div></div>'
+    + '<div class="form-group"><label>Brief Status</label><select id="fg_bs"><option value="briefed"' + (bs === 'briefed' ? ' selected' : '') + '>Briefed</option><option value="brief-in-progress"' + (bs !== 'briefed' ? ' selected' : '') + '>Brief in Progress</option></select></div>',
+    function() {
+      var tasks = [];
+      var n = document.getElementById('fg_name').value.trim();
+      if (n && n !== item.name) tasks.push(rename(id, BOARD_ID, n));
+      tasks.push(setCol(id, BOARD_ID, C.notes, document.getElementById('fg_dim').value.trim()));
+      tasks.push(setCol(id, BOARD_ID, C.subTitle, document.getElementById('fg_notes').value.trim()));
+      tasks.push(setCol(id, BOARD_ID, C.briefStatus, document.getElementById('fg_bs').value));
+      return Promise.all(tasks);
+    }, true, id, 'Save Changes');
+}
+function addGraphics() {
+  openModal('Add Graphic Asset',
+    '<div class="form-group"><label>Asset Name</label><input type="text" id="fag_name"></div>'
+    + '<div class="form-row"><div class="form-group"><label>Dimensions</label><input type="text" id="fag_dim"></div>'
+    + '<div class="form-group"><label>Notes</label><input type="text" id="fag_notes"></div></div>',
+    function() {
+      var n = document.getElementById('fag_name').value.trim();
+      if (!n) throw new Error('Name required');
+      var cv = {};
+      cv[C.notes] = document.getElementById('fag_dim').value.trim();
+      cv[C.subTitle] = document.getElementById('fag_notes').value.trim();
+      cv[C.briefStatus] = 'brief-in-progress';
+      return createItem(G.graphics, n, cv);
+    }, false, null, 'Add Asset');
+  setTimeout(function() { document.getElementById('fag_name').focus(); }, 50);
+}
+function saveBriefStatus(id, val) {
+  var sel = event.target;
+  if (sel) sel.className = 'brief-select ' + (val === 'briefed' ? 'briefed' : 'in-progress');
+  setCol(id, BOARD_ID, C.briefStatus, val).then(function() { toast(val === 'briefed' ? 'Marked Briefed' : 'Marked in Progress'); });
+}
+function editResource(id) {
+  var item = getItem(id);
+  var url = gcv(item, C.url), note = gcv(item, C.ownerNote), desc = gcv(item, C.notes);
+  openModal('Edit Resource',
+    '<div class="form-group"><label>Title</label><input type="text" id="fr_name" value="' + esc(item.name) + '"></div>'
+    + '<div class="form-group"><label>Description</label><input type="text" id="fr_desc" value="' + esc(desc) + '"></div>'
+    + '<div class="form-group"><label>SharePoint / File URL</label><input type="url" id="fr_url" value="' + esc(url) + '"></div>'
+    + '<div class="form-group"><label>Owner Note</label><input type="text" id="fr_note" value="' + esc(note) + '"></div>',
+    function() {
+      var tasks = [];
+      var n = document.getElementById('fr_name').value.trim();
+      if (n && n !== item.name) tasks.push(rename(id, BOARD_ID, n));
+      tasks.push(setCol(id, BOARD_ID, C.notes, document.getElementById('fr_desc').value.trim()));
+      tasks.push(setCol(id, BOARD_ID, C.url, document.getElementById('fr_url').value.trim()));
+      tasks.push(setCol(id, BOARD_ID, C.ownerNote, document.getElementById('fr_note').value.trim()));
+      return Promise.all(tasks);
+    }, true, id, 'Save Changes');
+}
+function addResource() {
+  openModal('Add Resource',
+    '<div class="form-group"><label>Title</label><input type="text" id="far_name"></div>'
+    + '<div class="form-group"><label>Description</label><input type="text" id="far_desc"></div>'
+    + '<div class="form-group"><label>SharePoint / File URL</label><input type="url" id="far_url"></div>'
+    + '<div class="form-group"><label>Owner Note</label><input type="text" id="far_note"></div>',
+    function() {
+      var n = document.getElementById('far_name').value.trim();
+      if (!n) throw new Error('Title required');
+      var cv = {};
+      cv[C.notes] = document.getElementById('far_desc').value.trim();
+      var u = document.getElementById('far_url').value.trim();
+      if (u) cv[C.url] = { url: u, text: u };
+      cv[C.ownerNote] = document.getElementById('far_note').value.trim();
+      return createItem(G.resources, n, cv);
+    }, false, null, 'Add Resource');
+  setTimeout(function() { document.getElementById('far_name').focus(); }, 50);
+}
+
+function renderOverview(g) {
+  var storyItem = g.story.find(function(i) { return i.name === 'Launch Story'; });
+  var storyHTML = '';
+  if (storyItem) {
+    var main = gcv(storyItem, C.mainText), sub = gcv(storyItem, C.subTitle);
+    var subs = storyItem.subitems || [];
+    subs.forEach(function(s) { bulletMap[s.id] = s.name; });
+    var paras = String(main || '').split('\n\n').filter(function(p) { return p.trim(); })
+      .map(function(p) { return '<p>' + esc(String(p).split('\n').join('<br>')) + '</p>'; }).join('');
+    var bullH = '';
+    if (subs.length) {
+      bullH = '<div class="story-bullets"><div class="story-bullets-label">' + esc(sub) + '</div>';
+      subs.forEach(function(s) {
+        bullH += '<div class="story-bullet"><span class="story-bullet-dash">—</span><span style="flex:1">' + esc(s.name) + '</span>'
+          + '<div class="bullet-btns" onclick="event.stopPropagation()">'
+          + '<button class="bullet-btn" onclick="editBullet(' + s.id + ')">✎</button>'
+          + '<button class="bullet-btn del" onclick="deleteBullet(' + s.id + ')">✕</button>'
+          + '</div></div>';
+      });
+      bullH += '</div>';
+    }
+    var sid = storyItem.id;
+    storyHTML = '<div class="story-block" onclick="editStory(' + sid + ')" title="Click to edit">'
+      + '<div class="story-text">' + paras + '</div>' + bullH + '</div>';
+  } else {
+    storyHTML = '<p class="empty">No story yet — create an item named "Launch Story" in the Story group.</p>';
+  }
+
+  var tlHTML = g.timeline.length
+    ? '<div class="timeline-grid">' + g.timeline.map(function(item) {
+        var label = gcv(item, C.label), colour = gcv(item, C.cardColour), sub = gcv(item, C.subTitle);
+        return '<div class="tcard' + (colour === 'red' ? ' red' : colour === 'amber' ? ' amber' : '') + '" onclick="editTimeline(' + item.id + ')">'
+          + '<div class="tcard-label">' + esc(label) + '</div>'
+          + '<div class="tcard-title">' + esc(item.name) + '</div>'
+          + (sub ? '<div class="tcard-sub">' + esc(sub) + '</div>' : '')
+          + '</div>';
+      }).join('') + '</div>'
+    : '<p class="empty">No timeline items yet.</p>';
+
+  var grHTML = g.graphics.length
+    ? '<table class="gtable"><thead><tr><th>Asset</th><th>Dimensions</th><th>Notes</th><th>Brief Status</th></tr></thead><tbody>'
+      + g.graphics.map(function(item) {
+          var dim = gcv(item, C.notes), notes = gcv(item, C.subTitle), bs = gcv(item, C.briefStatus) || 'brief-in-progress';
+          return '<tr class="gr" onclick="editGraphics(' + item.id + ')">'
+            + '<td>' + esc(item.name) + '</td>'
+            + '<td>' + (dim ? '<span class="gdim">' + esc(dim) + '</span>' : '') + '</td>'
+            + '<td style="color:var(--muted);font-size:13px">' + esc(notes) + '</td>'
+            + '<td><select class="brief-select ' + (bs === 'briefed' ? 'briefed' : 'in-progress') + '" onclick="event.stopPropagation()" onchange="saveBriefStatus(' + item.id + ',this.value)">'
+            + '<option value="briefed"' + (bs === 'briefed' ? ' selected' : '') + '>Briefed</option>'
+            + '<option value="brief-in-progress"' + (bs !== 'briefed' ? ' selected' : '') + '>Brief in Progress</option>'
+            + '</select></td></tr>';
+        }).join('')
+      + '</tbody></table>'
+    : '<p class="empty">No graphic assets yet.</p>';
+
+  var rsHTML = '<div class="rlist">' + g.resources.map(function(item) {
+    var url = gcv(item, C.url), note = gcv(item, C.ownerNote), desc = gcv(item, C.notes);
+    var hasUrl = url && url.trim() !== '' && url.indexOf('http') === 0;
+    var pill = hasUrl
+      ? '<span class="avail-pill available"><span class="avail-dot"></span>Available</span>'
+      : '<span class="avail-pill unavailable"><span class="avail-dot"></span>Not Available</span>';
+    var btn = hasUrl ? '<a href="' + esc(url) + '" target="_blank" class="rcard-btn" onclick="event.stopPropagation()">Open File</a>' : '';
+    return '<div class="rcard" onclick="editResource(' + item.id + ')">'
+      + '<div><div class="rcard-title">' + esc(item.name) + '</div>'
+      + (desc ? '<div class="rcard-desc">' + esc(desc) + '</div>' : '')
+      + (note ? '<div class="rcard-note">' + esc(note) + '</div>' : '')
+      + '</div><div class="rcard-right">' + pill + btn + '</div></div>';
+  }).join('') + '</div>';
+
+  var storyId = storyItem ? storyItem.id : '';
+  document.getElementById('overviewContent').innerHTML =
+    '<div class="section">' + secHead('01', 'Background', 'Launch Story',
+      storyId ? "editStory('" + storyId + "')" : '', storyId ? "addBullet('" + storyId + "')" : '') + storyHTML + '</div>'
+    + '<div class="section">' + secHead('02', 'Key Dates', 'Launch Timeline', '', 'addTimeline()') + tlHTML + '</div>'
+    + '<div class="section">' + secHead('03', 'Design Specs', 'Graphics Required', '', 'addGraphics()') + grHTML + '</div>'
+    + '<div class="section">' + secHead('04', 'Links &amp; Files', 'Resources', '', 'addResource()') + rsHTML + '</div>';
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TAB 2: PRODUCT DETAILS
+// ════════════════════════════════════════════════════════════════════
+var YOUTH_SIZES = ['JS','JM','JL','JXL','8','10','12','14','16'];
+function isYouth(n) { return YOUTH_SIZES.indexOf(n) !== -1; }
+
+function editProduct(id) {
+  var item = getItem(id);
+  var pa = gcv(item, C.priceAdult), py = gcv(item, C.priceYouth);
+  var ua = gcv(item, C.urlAdult), uy = gcv(item, C.urlYouth);
+  var desc = gcv(item, C.description), img = gcv(item, C.imageUrl);
+  openModal('Edit — ' + item.name,
+    '<div class="form-group"><label>Name</label><input type="text" id="ep_name" value="' + esc(item.name) + '"></div>'
+    + '<div class="form-row"><div class="form-group"><label>Price Adult ($)</label><input type="number" id="ep_pa" value="' + esc(pa) + '"></div>'
+    + '<div class="form-group"><label>Price Youth ($) — leave blank if N/A</label><input type="number" id="ep_py" value="' + esc(py) + '"></div></div>'
+    + '<div class="form-group"><label>URL Adult (BigCommerce)</label><input type="url" id="ep_ua" value="' + esc(ua) + '"></div>'
+    + '<div class="form-group"><label>URL Youth (BigCommerce) — leave blank if N/A</label><input type="url" id="ep_uy" value="' + esc(uy) + '"></div>'
+    + '<div class="form-group"><label>Product Image URL</label><input type="url" id="ep_img" value="' + esc(img) + '"></div>'
+    + '<div class="form-group"><label>Description</label><textarea id="ep_desc">' + esc(desc) + '</textarea></div>',
+    function() {
+      var tasks = [];
+      var n = document.getElementById('ep_name').value.trim();
+      if (n && n !== item.name) tasks.push(rename(id, BOARD_ID, n));
+      var npa = document.getElementById('ep_pa').value, npy = document.getElementById('ep_py').value;
+      var nua = document.getElementById('ep_ua').value.trim(), nuy = document.getElementById('ep_uy').value.trim();
+      var nimg = document.getElementById('ep_img').value.trim(), ndesc = document.getElementById('ep_desc').value.trim();
+      if (npa !== '') tasks.push(setCol(id, BOARD_ID, C.priceAdult, npa));
+      if (npy !== '') tasks.push(setCol(id, BOARD_ID, C.priceYouth, npy));
+      if (nua) tasks.push(setCol(id, BOARD_ID, C.urlAdult, nua));
+      if (nuy) tasks.push(setCol(id, BOARD_ID, C.urlYouth, nuy));
+      if (nimg) tasks.push(setCol(id, BOARD_ID, C.imageUrl, nimg));
+      if (ndesc) tasks.push(setCol(id, BOARD_ID, C.description, ndesc));
+      return Promise.all(tasks);
+    }, true, id, 'Save Changes');
+}
+function editVariant(sid) {
+  sid = String(sid);
+  var sub = subitemMap[sid]; if (!sub) return;
+  openModal('Edit Variant — ' + sub.name,
+    '<div class="form-group"><label>Size</label><input type="text" id="ev_size" value="' + esc(sub.name) + '"></div>'
+    + '<div class="form-row"><div class="form-group"><label>SKU</label><input type="text" id="ev_sku" value="' + esc(sub.sku) + '"></div>'
+    + '<div class="form-group"><label>Barcode</label><input type="text" id="ev_bc" value="' + esc(sub.barcode) + '"></div></div>',
+    function() {
+      var tasks = [];
+      var sz = document.getElementById('ev_size').value.trim();
+      var sk = document.getElementById('ev_sku').value.trim();
+      var bc = document.getElementById('ev_bc').value.trim();
+      if (sz && sz !== sub.name) tasks.push(rename(sid, SUB_BOARD, sz));
+      if (sk) tasks.push(setCol(sid, SUB_BOARD, C.sku, sk));
+      if (bc) tasks.push(setCol(sid, SUB_BOARD, C.barcode, bc));
+      return Promise.all(tasks);
+    }, false, null, 'Save Changes');
+}
+
+function renderProducts(g) {
+  var navH = '<div class="prod-nav">' + g.products.map(function(p, i) {
+    return '<a href="#prod' + i + '">' + esc(p.name) + '</a>';
+  }).join('') + '</div>';
+
+  var html = g.products.map(function(item, idx) {
+    var pa = gcv(item, C.priceAdult), py = gcv(item, C.priceYouth);
+    var ua = gcv(item, C.urlAdult), uy = gcv(item, C.urlYouth);
+    var desc = gcv(item, C.description), img = gcv(item, C.imageUrl);
+    var subs = item.subitems || [];
+    subs.forEach(function(s) {
+      var sku = '', bc = '';
+      if (s.column_values) s.column_values.forEach(function(cv) {
+        if (cv.id === C.sku) sku = cv.text || '';
+        if (cv.id === C.barcode) bc = cv.text || '';
+      });
+      subitemMap[s.id] = { name: s.name, sku: sku, barcode: bc };
+    });
+    var hasYouth = py && py !== '';
+    var priceH = !pa
+      ? '<span class="ptbc">Pricing TBC</span>'
+      : hasYouth
+        ? '<div class="prow"><span class="plabel">Adult</span><span class="pval">$' + parseFloat(pa).toFixed(2) + '</span></div>'
+          + '<div class="prow"><span class="plabel">Youth</span><span class="pval">$' + parseFloat(py).toFixed(2) + '</span></div>'
+        : '<span class="pval">$' + parseFloat(pa).toFixed(2) + '</span>';
+    var imgH = img
+      ? '<img src="' + esc(img) + '" alt="" onerror="this.style.display=\'none\'">'
+      : '<div class="imgph">Image<br>Coming Soon</div>';
+    var dcH = '';
+    if (desc) String(desc).split('\n\n').forEach(function(d) { if (d.trim()) dcH += '<p>' + esc(d) + '</p>'; });
+    var lnH = '';
+    if (ua || uy) {
+      var both = ua && uy;
+      lnH = '<div class="plinks">';
+      if (ua) lnH += '<div class="lrow">' + (both ? '<span class="lbadge">Adult</span>' : '') + '<span class="lurl"><a href="' + esc(ua) + '" target="_blank">' + esc(ua) + '</a></span><button class="cbtn" onclick="cp(\'' + esc(ua) + '\',this)">⎘</button></div>';
+      if (uy) lnH += '<div class="lrow">' + (both ? '<span class="lbadge">Youth</span>' : '') + '<span class="lurl"><a href="' + esc(uy) + '" target="_blank">' + esc(uy) + '</a></span><button class="cbtn" onclick="cp(\'' + esc(uy) + '\',this)">⎘</button></div>';
+      lnH += '</div>';
+    }
+    var adultRows = '', youthRows = '';
+    subs.forEach(function(s) {
+      var sub = subitemMap[s.id] || {};
+      var row = '<tr onclick="editVariant(' + s.id + ')">'
+        + '<td class="scell">' + esc(s.name) + '</td>'
+        + '<td>' + (sub.sku || '<span class="tbd">TBC</span>') + (sub.sku ? ' <button class="cbtn" onclick="event.stopPropagation();cp(\'' + esc(sub.sku) + '\',this)">⎘</button>' : '') + '</td>'
+        + '<td>' + (sub.barcode ? sub.barcode + ' <button class="cbtn" onclick="event.stopPropagation();cp(\'' + esc(sub.barcode) + '\',this)">⎘</button>' : '<span class="tbd">TBC</span>') + '</td>'
+        + '</tr>';
+      if (isYouth(s.name)) youthRows += row; else adultRows += row;
+    });
+    var vzH = '';
+    if (adultRows) vzH += '<div class="vsec"><div class="vlabel">Adult / Unisex Variants</div><table class="vtbl"><thead><tr><th>Size</th><th>SKU</th><th>Barcode</th></tr></thead><tbody>' + adultRows + '</tbody></table></div>';
+    if (youthRows) vzH += '<div class="vsec" style="margin-top:18px"><div class="vlabel">Youth Variants</div><table class="vtbl"><thead><tr><th>Size</th><th>SKU</th><th>Barcode</th></tr></thead><tbody>' + youthRows + '</tbody></table></div>';
+    return '<div id="prod' + idx + '" class="pcard" onclick="editProduct(' + item.id + ')">'
+      + '<div class="phero">' + imgH + '<div class="pprices">' + priceH + '</div></div>'
+      + '<div class="pbody"><div class="pname">' + esc(item.name) + '</div>'
+      + (dcH ? '<div class="pdesc">' + dcH + '</div>' : '')
+      + lnH + vzH + '</div></div>';
+  }).join('');
+  document.getElementById('productsContent').innerHTML = navH + (html || '<p class="empty">No products yet — add items to the Products group.</p>');
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TAB 3: PHOTOSHOOT
+// ════════════════════════════════════════════════════════════════════
+function editShootDetails() {
+  var item = allItems.find(function(i) { return i.name === 'Shoot Details'; });
+  if (!item) return;
+  openModal('Edit Shoot Details',
+    '<div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="fd" value="' + esc(gcv(item, C.date)) + '"></div>'
+    + '<div class="form-group"><label>Time</label><input type="text" id="ft" value="' + esc(gcv(item, C.time)) + '"></div></div>'
+    + '<div class="form-group"><label>Location</label><input type="text" id="fl" value="' + esc(gcv(item, C.loc)) + '"></div>'
+    + '<div class="form-group"><label>Notes</label><textarea id="fn">' + esc(gcv(item, C.sNotes)) + '</textarea></div>',
+    function() {
+      var id = item.id, tasks = [];
+      var fd = document.getElementById('fd').value, ft = document.getElementById('ft').value;
+      var fl = document.getElementById('fl').value, fn = document.getElementById('fn').value;
+      if (fd) tasks.push(setCol(id, BOARD_ID, C.date, fd));
+      if (ft) tasks.push(setCol(id, BOARD_ID, C.time, ft));
+      if (fl) tasks.push(setCol(id, BOARD_ID, C.loc, fl));
+      if (fn) tasks.push(setCol(id, BOARD_ID, C.sNotes, fn));
+      return Promise.all(tasks);
+    }, false, null, 'Save Changes');
+}
+function addShootPerson(role, titleLabel, extraFields, buildCv) {
+  openModal('Add ' + titleLabel,
+    '<div class="form-group"><label>Name</label><input type="text" id="sp_name"></div>' + extraFields,
+    function() {
+      var name = document.getElementById('sp_name').value.trim();
+      if (!name) throw new Error('Name required');
+      var cv = {}; cv[C.role] = role;
+      Object.assign(cv, buildCv());
+      return api('mutation($bid:ID!,$gid:String!,$n:String!,$cv:JSON!){create_item(board_id:$bid,group_id:$gid,item_name:$n,column_values:$cv){id}}',
+        { bid: BOARD_ID, gid: G.shoot, n: name, cv: JSON.stringify(cv) });
+    }, false, null, 'Add');
+  setTimeout(function() { document.getElementById('sp_name').focus(); }, 50);
+}
+function addPlayer() {
+  addShootPerson('player', 'Player',
+    '<div class="form-row"><div class="form-group"><label>Arrival Time</label><input type="text" id="sp_arr"></div>'
+    + '<div class="form-group"><label>Notes</label><input type="text" id="sp_pn"></div></div>',
+    function() {
+      var cv = {};
+      var arr = document.getElementById('sp_arr').value.trim();
+      var pn = document.getElementById('sp_pn').value.trim();
+      if (arr) cv[C.arr] = arr;
+      if (pn) cv[C.pnotes] = pn;
+      return cv;
+    });
+}
+function addStaff() {
+  addShootPerson('staff', 'Staff Member',
+    '<div class="form-row"><div class="form-group"><label>Role / Title</label><input type="text" id="sp_resp"></div>'
+    + '<div class="form-group"><label>Arrival Time</label><input type="text" id="sp_arr"></div></div>',
+    function() {
+      var cv = {};
+      var resp = document.getElementById('sp_resp').value.trim();
+      var arr = document.getElementById('sp_arr').value.trim();
+      if (resp) cv[C.resp] = resp;
+      if (arr) cv[C.arr] = arr;
+      return cv;
+    });
+}
+function addListItem(role, label) {
+  addShootPerson(role, label,
+    '<div class="form-group"><label>Responsible</label><input type="text" id="sp_resp"></div>',
+    function() {
+      var cv = {}, resp = document.getElementById('sp_resp').value.trim();
+      if (resp) cv[C.resp] = resp;
+      return cv;
+    });
+}
+function editShootBulkList(items, title, fieldsFn) {
+  var rows = items.map(function(item, idx) {
+    return '<div class="rep-item" data-idx="' + idx + '">'
+      + '<button class="rep-del-btn" onclick="toggleDel(this.parentNode)">✕</button>'
+      + fieldsFn(item, idx) + '</div>';
+  }).join('');
+  openModal('Edit ' + title, rows || '<p class="empty">No items yet.</p>',
+    function() {
+      var tasks = [];
+      document.querySelectorAll('.rep-item').forEach(function(el) {
+        var idx = parseInt(el.dataset.idx), item = items[idx]; if (!item) return;
+        if (el.classList.contains('is-deleted')) { tasks.push(deleteItemApi(item.id)); return; }
+        var ne = el.querySelector('[data-f="name"]'), ae = el.querySelector('[data-f="arr"]');
+        var re = el.querySelector('[data-f="resp"]'), pe = el.querySelector('[data-f="pnotes"]');
+        if (ne) { var nn = ne.value.trim(); if (nn && nn !== item.name) tasks.push(rename(item.id, BOARD_ID, nn)); }
+        if (ae) { var na = ae.value.trim(); if (na) tasks.push(setCol(item.id, BOARD_ID, C.arr, na)); }
+        if (re) { var nr = re.value.trim(); if (nr) tasks.push(setCol(item.id, BOARD_ID, C.resp, nr)); }
+        if (pe) { var np = pe.value.trim(); if (np) tasks.push(setCol(item.id, BOARD_ID, C.pnotes, np)); }
+      });
+      return Promise.all(tasks);
+    }, false, null, 'Save Changes');
+}
+function editPlayers(players) {
+  editShootBulkList(players, 'Players', function(item) {
+    return '<div class="form-row"><div class="form-group"><label>Name</label><input type="text" data-f="name" value="' + esc(item.name) + '"></div>'
+      + '<div class="form-group"><label>Arrival</label><input type="text" data-f="arr" value="' + esc(gcv(item, C.arr)) + '"></div></div>'
+      + '<div class="form-group"><label>Notes</label><input type="text" data-f="pnotes" value="' + esc(gcv(item, C.pnotes)) + '"></div>';
+  });
+}
+function editStaff(staff) {
+  editShootBulkList(staff, 'Staff', function(item) {
+    return '<div class="form-row"><div class="form-group"><label>Name</label><input type="text" data-f="name" value="' + esc(item.name) + '"></div>'
+      + '<div class="form-group"><label>Role</label><input type="text" data-f="resp" value="' + esc(gcv(item, C.resp)) + '"></div></div>'
+      + '<div class="form-group"><label>Arrival</label><input type="text" data-f="arr" value="' + esc(gcv(item, C.arr)) + '"></div>';
+  });
+}
+function editShootProducts(products) {
+  editShootBulkList(products, 'Products', function(item) {
+    return '<div class="form-row"><div class="form-group"><label>Product</label><input type="text" data-f="name" value="' + esc(item.name) + '"></div>'
+      + '<div class="form-group"><label>Responsible</label><input type="text" data-f="resp" value="' + esc(gcv(item, C.resp)) + '"></div></div>';
+  });
+}
+function editProps(props) {
+  editShootBulkList(props, 'Props', function(item) {
+    return '<div class="form-row"><div class="form-group"><label>Prop</label><input type="text" data-f="name" value="' + esc(item.name) + '"></div>'
+      + '<div class="form-group"><label>Responsible</label><input type="text" data-f="resp" value="' + esc(gcv(item, C.resp)) + '"></div></div>';
+  });
+}
+function editRunSheets(rsItems) {
+  var names = ['Retail Run Sheet', 'Media / Marketing Run Sheet'];
+  var fields = names.map(function(name, i) {
+    var item = rsItems.find(function(r) { return r.name === name; });
+    var url = item ? gcv(item, C.rsUrl) : '';
+    return '<div class="form-group" data-rsname="' + esc(name) + '" data-rsid="' + (item ? item.id : '') + '">'
+      + '<label>' + esc(name) + '</label><input type="url" id="rs' + i + '" value="' + esc(url) + '" placeholder="https://..."></div>';
+  }).join('');
+  openModal('Edit Run Sheets', fields, function() {
+    var tasks = [];
+    names.forEach(function(name, i) {
+      var el = document.querySelector('[data-rsname="' + name + '"]');
+      var id = el ? el.dataset.rsid : '';
+      var url = document.getElementById('rs' + i).value.trim();
+      if (url && id) tasks.push(setCol(id, BOARD_ID, C.rsUrl, url));
+    });
+    return Promise.all(tasks);
+  }, false, null, 'Save Changes');
+}
+
+function renderShoot(g) {
+  var details  = g.shoot.find(function(i) { return i.name === 'Shoot Details'; });
+  var players  = g.shoot.filter(function(i) { return gcv(i, C.role) === 'player'; });
+  var staff    = g.shoot.filter(function(i) { return gcv(i, C.role) === 'staff'; });
+  var products = g.shoot.filter(function(i) { return gcv(i, C.role) === 'product'; });
+  var props    = g.shoot.filter(function(i) { return gcv(i, C.role) === 'prop'; });
+  var rsheets  = g.shoot.filter(function(i) { return i.name === 'Retail Run Sheet' || i.name === 'Media / Marketing Run Sheet'; });
+
+  var detH = '';
+  if (details) {
+    detH = '<div class="shoot-hero">'
+      + '<div class="shoot-hero-item"><div class="slabel">Date</div><div class="sval">' + esc(fmtDate(gcv(details, C.date))) + '</div></div>'
+      + '<div class="shoot-hero-item"><div class="slabel">Time</div><div class="sval">' + esc(gcv(details, C.time) || 'TBC') + '</div></div>'
+      + '<div class="shoot-hero-item"><div class="slabel">Location</div><div class="sval">' + esc(gcv(details, C.loc) || 'TBC') + '</div></div>'
+      + '<div style="position:absolute;top:12px;right:16px"><button class="edit-btn" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.6)" onclick="editShootDetails()">✎ Edit Details</button></div>'
+      + '</div>';
+  } else {
+    detH = '<p class="empty" style="margin-bottom:24px">Create a "Shoot Details" item in the Shoot group to show date/time/location.</p>';
+  }
+
+  var plH = players.length
+    ? '<div class="cards-grid">' + players.map(function(p) {
+        var pn = gcv(p, C.pnotes);
+        return '<div class="scard"><div class="scard-name">' + esc(p.name) + '</div>'
+          + '<div class="scard-row"><span class="scard-tag">Arrival</span>' + esc(gcv(p, C.arr) || 'TBC') + '</div>'
+          + (pn ? '<div class="pnote">' + esc(pn) + '</div>' : '') + '</div>';
+      }).join('') + '</div>'
+    : '<p class="empty">No players added yet.</p>';
+
+  var stH = staff.length
+    ? '<table class="stbl"><thead><tr><th>Name</th><th>Role</th><th>Arrival</th></tr></thead><tbody>'
+      + staff.map(function(s) { return '<tr><td>' + esc(s.name) + '</td><td>' + esc(gcv(s, C.resp) || '—') + '</td><td>' + esc(gcv(s, C.arr) || 'TBC') + '</td></tr>'; }).join('')
+      + '</tbody></table>'
+    : '<p class="empty">No staff added yet.</p>';
+
+  var prH = products.length
+    ? '<table class="stbl"><thead><tr><th>Product</th><th>Responsible</th></tr></thead><tbody>'
+      + products.map(function(p) { var r = gcv(p, C.resp); return '<tr><td>' + esc(p.name) + '</td><td>' + (r ? '<span class="owner-chip">' + esc(r) + '</span>' : '—') + '</td></tr>'; }).join('')
+      + '</tbody></table>'
+    : '<p class="empty">No products added yet.</p>';
+
+  var ppH = props.length
+    ? '<table class="stbl"><thead><tr><th>Prop</th><th>Responsible</th></tr></thead><tbody>'
+      + props.map(function(p) { var r = gcv(p, C.resp); return '<tr><td>' + esc(p.name) + '</td><td>' + (r ? '<span class="owner-chip">' + esc(r) + '</span>' : '—') + '</td></tr>'; }).join('')
+      + '</tbody></table>'
+    : '<p class="empty">No props added yet.</p>';
+
+  var rsH = '<div class="run-sheets">' + ['Retail Run Sheet', 'Media / Marketing Run Sheet'].map(function(name) {
+    var item = rsheets.find(function(r) { return r.name === name; }), url = item ? gcv(item, C.rsUrl) : '';
+    return '<div class="rs-card"><div class="rs-title">' + esc(name) + '</div>'
+      + (url ? '<a href="' + esc(url) + '" target="_blank" class="rs-link">Open File</a>' : '<span class="rs-tbc">No link yet</span>')
+      + '</div>';
+  }).join('') + '</div>';
+
+  var rsSnap = rsheets.slice();
+  document.getElementById('shootContent').innerHTML = detH
+    + '<div class="section">' + secHead('01', 'Talent', 'Players Booked',
+        players.length ? "editPlayers(getSnap(G.shoot).filter(function(i){return gcv(i,C.role)==='player';}))" : '', 'addPlayer()') + plH + '</div>'
+    + '<div class="section">' + secHead('02', 'Crew', 'Staff Required',
+        staff.length ? "editStaff(getSnap(G.shoot).filter(function(i){return gcv(i,C.role)==='staff';}))" : '', 'addStaff()') + stH + '</div>'
+    + '<div class="section">' + secHead('03', 'Range', 'Products Required',
+        products.length ? "editShootProducts(getSnap(G.shoot).filter(function(i){return gcv(i,C.role)==='product';}))" : '', "addListItem('product','Product')") + prH + '</div>'
+    + '<div class="section">' + secHead('04', 'Styling', 'Props Required',
+        props.length ? "editProps(getSnap(G.shoot).filter(function(i){return gcv(i,C.role)==='prop';}))" : '', "addListItem('prop','Prop')") + ppH + '</div>'
+    + '<div class="section">' + secHead('05', 'Documents', 'Run Sheets', 'editRunSheets(getSnap(G.shoot).filter(function(i){return i.name==="Retail Run Sheet"||i.name==="Media / Marketing Run Sheet";}))', '') + rsH + '</div>';
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TAB 6: ACTIONS
+// ════════════════════════════════════════════════════════════════════
+
+// Comments are stored as JSON array in C.comments column:
+// [{"author":"Georgie","text":"Done this","ts":"2026-05-20T14:30:00.000Z"}, ...]
+// C.fileUrl stores a single file link (separate from comments)
+
+function parseComments(raw) {
+  if (!raw) return [];
+  try {
+    var parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch(e) {}
+  // Legacy: plain text in comments field — wrap as single entry
+  if (raw.trim()) return [{ author: '', text: raw.trim(), ts: '' }];
+  return [];
+}
+
+function serializeComments(arr) {
+  return JSON.stringify(arr);
+}
+
+function fmtCommentTime(ts) {
+  if (!ts) return '';
+  try {
+    var d = new Date(ts);
+    return d.toLocaleDateString('en-AU', { day:'numeric', month:'short' })
+      + ' at ' + d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+  } catch(e) { return ''; }
+}
+
+// ── ACTION FORM (create / edit details) ───────────────────────────────────
+function actionForm(item) {
+  var name     = item ? esc(item.name) : '';
+  var assignee = item ? esc(gcv(item, C.assignee)) : '';
+  var due      = item ? gcv(item, C.due) : '';
+  var ad       = item ? gcv(item, C.assignedDate) : '';
+  var st       = item ? (gcv(item, C.status).toLowerCase() || 'open') : 'open';
+  var fileUrl  = item ? esc(gcv(item, C.fileUrl)) : '';
+  return '<div class="form-group"><label>Action</label>'
+    + '<input type="text" id="f_name" value="' + name + '" placeholder="What needs to be done?"></div>'
+    + '<div class="form-group"><label>Assigned To</label>'
+    + '<input type="text" id="f_assignee" value="' + assignee + '" placeholder="e.g. Georgie Morris"></div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label>Assigned Date</label><input type="date" id="f_ad" value="' + esc(ad) + '"></div>'
+    + '<div class="form-group"><label>Due Date</label><input type="date" id="f_due" value="' + esc(due) + '"></div>'
+    + '</div>'
+    + '<div class="form-group"><label>Status</label><select id="f_status">'
+    + '<option value="open"'        + (st === 'open'        ? ' selected' : '') + '>Open</option>'
+    + '<option value="inprogress"'  + (st === 'inprogress'  ? ' selected' : '') + '>In Progress</option>'
+    + '<option value="complete"'    + (st === 'complete'    ? ' selected' : '') + '>Complete</option>'
+    + '</select></div>'
+    + '<div class="form-group"><label>File / Link</label>'
+    + '<input type="url" id="f_fileUrl" value="' + fileUrl + '" placeholder="https://…"></div>';
+}
+
+var saveActionFn = function() {
+  var name = document.getElementById('f_name').value.trim();
+  if (!name) throw new Error('Action description required');
+  var assignee = document.getElementById('f_assignee').value.trim();
+  var ad       = document.getElementById('f_ad').value;
+  var due      = document.getElementById('f_due').value;
+  var status   = document.getElementById('f_status').value;
+  var fileUrl  = document.getElementById('f_fileUrl').value.trim();
+  function buildTasks(id) {
+    var tasks = [];
+    tasks.push(setCol(id, BOARD_ID, C.assignee, assignee));
+    if (ad)      tasks.push(setCol(id, BOARD_ID, C.assignedDate, ad));
+    if (due)     tasks.push(setCol(id, BOARD_ID, C.due, due));
+    tasks.push(setCol(id, BOARD_ID, C.status, status));
+    tasks.push(setCol(id, BOARD_ID, C.fileUrl, fileUrl));
+    return Promise.all(tasks);
+  }
+  if (editingActionId) {
+    return rename(editingActionId, BOARD_ID, name).then(function() { return buildTasks(editingActionId); });
+  } else {
+    var cv = {}; cv[C.status] = 'open';
+    return api('mutation($bid:ID!,$gid:String!,$n:String!,$cv:JSON!){create_item(board_id:$bid,group_id:$gid,item_name:$n,column_values:$cv){id}}',
+      { bid: BOARD_ID, gid: G.actions, n: name, cv: JSON.stringify(cv) })
+      .then(function(r) {
+        var d = r.data || r;
+        return buildTasks(d.create_item.id);
+      });
+  }
+};
+
+function openAddAction() {
+  editingActionId = null;
+  openModal('New Action', actionForm(null), saveActionFn, false, null, 'Add Action');
+  document.getElementById('modalDelBtn').style.display = 'none';
+  setTimeout(function() { var e = document.getElementById('f_name'); if (e) e.focus(); }, 50);
+}
+function openEditAction(id) {
+  editingActionId = id;
+  openModal('Edit Action', actionForm(getItem(id)), saveActionFn, true, id, 'Save Changes');
+}
+
+// ── STATUS CHANGE (inline pill) ───────────────────────────────────────────
+function changeActionStatus(id, newVal, cardEl) {
+  // Optimistic UI update
+  if (cardEl) {
+    cardEl.className = 'act-card s-' + newVal;
+    var av = cardEl.querySelector('.act-av');
+    if (av) { av.style.background = newVal === 'complete' ? '#9ca3af' : newVal === 'inprogress' ? 'var(--amber)' : 'var(--navy)'; }
+    var pill = cardEl.querySelector('.st-pill');
+    if (pill) { pill.className = 'st-pill ' + newVal; pill.value = newVal; }
+    var title = cardEl.querySelector('.act-title');
+    if (title) { title.style.textDecoration = newVal === 'complete' ? 'line-through' : ''; }
+  }
+  setStatus('saving');
+  setCol(id, BOARD_ID, C.status, newVal).then(function() {
+    var labels = { open:'Marked Open', inprogress:'Marked In Progress', complete:'Marked Complete' };
+    toast(labels[newVal] || 'Updated');
+    setStatus('live');
+    // Re-render stats
+    var actions = getSnap(G.actions);
+    updateActionStats(actions);
+  }).catch(function(e) {
+    toast('Failed: ' + e.message, true); setStatus('error'); loadData();
+  });
+}
+
+function updateActionStats(actions) {
+  var nOpen = 0, nIn = 0, nDone = 0;
+  actions.forEach(function(a) {
+    var s = gcv(a, C.status).toLowerCase() || 'open';
+    if (s === 'complete') nDone++; else if (s === 'inprogress') nIn++; else nOpen++;
+  });
+  var el;
+  if ((el = document.getElementById('statOpen')))       el.textContent = nOpen;
+  if ((el = document.getElementById('statInProgress'))) el.textContent = nIn;
+  if ((el = document.getElementById('statDone')))       el.textContent = nDone;
+}
+
+// ── COMMENT THREAD ────────────────────────────────────────────────────────
+function submitComment(itemId, inputEl, btnEl) {
+  var text = inputEl.value.trim();
+  if (!text) return;
+  var author = 'You'; // Can be replaced with a stored name preference
+  var item = getItem(itemId);
+  var existing = parseComments(gcv(item, C.comments));
+  var newComment = { author: author, text: text, ts: new Date().toISOString() };
+  var updated = existing.concat([newComment]);
+  btnEl.disabled = true;
+  setCol(itemId, BOARD_ID, C.comments, serializeComments(updated))
+    .then(function() {
+      // Update local allItems so re-render shows new comment
+      var localItem = allItems.find(function(i) { return String(i.id) === String(itemId); });
+      if (localItem) {
+        for (var i = 0; i < localItem.column_values.length; i++) {
+          if (localItem.column_values[i].id === C.comments) {
+            localItem.column_values[i].value = JSON.stringify(serializeComments(updated));
+            localItem.column_values[i].text = serializeComments(updated);
+            break;
+          }
+        }
+      }
+      // Re-render just the thread in this card
+      var threadEl = document.getElementById('thread-' + itemId);
+      if (threadEl) threadEl.innerHTML = buildCommentList(updated);
+      inputEl.value = '';
+      btnEl.disabled = false;
+      toast('Comment added');
+    })
+    .catch(function(e) { toast('Failed: ' + e.message, true); btnEl.disabled = false; });
+}
+
+function buildCommentList(comments) {
+  if (!comments.length) return '<p style="font-size:12px;color:var(--muted);font-style:italic">No comments yet.</p>';
+  return '<div class="comment-list">' + comments.map(function(c) {
+    return '<div class="comment-bubble">'
+      + '<div class="comment-meta">'
+      + (c.author ? '<span class="comment-author">' + esc(c.author) + '</span>' : '')
+      + (c.ts ? '<span class="comment-time">' + esc(fmtCommentTime(c.ts)) + '</span>' : '')
+      + '</div>'
+      + '<div class="comment-text">' + esc(c.text) + '</div>'
+      + '</div>';
+  }).join('') + '</div>';
+}
+
+// ── BUILD ACTION CARDS ────────────────────────────────────────────────────
+function buildActionCards(sorted) {
+  return sorted.map(function(a) {
+    var assignee = gcv(a, C.assignee);
+    var due      = gcv(a, C.due);
+    var ad       = gcv(a, C.assignedDate);
+    var status   = gcv(a, C.status).toLowerCase() || 'open';
+    var fileUrl  = gcv(a, C.fileUrl);
+    var comments = parseComments(gcv(a, C.comments));
+    var overdue  = status !== 'complete' && isOverdue(due);
+    var dueFmt   = fmtDateShort(due);
+    var adFmt    = fmtDateShort(ad);
+
+    var stLabel = status === 'complete' ? 'Complete' : status === 'inprogress' ? 'In Progress' : 'Open';
+
+    var thread = '<div class="act-thread">'
+      + '<div class="thread-label">Comments</div>'
+      + '<div id="thread-' + a.id + '">' + buildCommentList(comments) + '</div>'
+      + (fileUrl ? '<div style="margin-top:8px"><a href="' + esc(fileUrl) + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--teal-dark);text-decoration:none;border:1px solid var(--border);border-radius:4px;padding:5px 10px">📎 Attached File</a></div>' : '')
+      + '<div class="comment-input-row" style="margin-top:12px">'
+      + '<textarea class="comment-input" id="ci-' + a.id + '" placeholder="Add a comment…" rows="1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();submitComment(' + a.id + ',this,document.getElementById(\'cs-' + a.id + '\'))}"></textarea>'
+      + '<button class="comment-submit" id="cs-' + a.id + '" onclick="submitComment(' + a.id + ',document.getElementById(\'ci-' + a.id + '\'),this)">Post</button>'
+      + '</div></div>';
+
+    return '<div class="act-card s-' + status + '" id="ac-' + a.id + '">'
+      + '<div class="act-card-top" onclick="toggleThread(\'' + a.id + '\')">'
+      + '<div class="act-av">' + esc(initials(assignee)) + '</div>'
+      + '<div class="act-body">'
+      + '<div class="act-title">' + esc(a.name) + '</div>'
+      + '<div class="act-chips">'
+      + (assignee ? '<span class="act-assignee-chip">👤 ' + esc(assignee) + '</span>' : '')
+      + (adFmt ? '<span style="font-size:11px;color:var(--muted)">Assigned ' + esc(adFmt) + '</span>' : '')
+      + (dueFmt ? '<span class="badge-due' + (overdue ? ' overdue' : '') + '">' + (overdue ? 'Overdue · ' : 'Due ') + esc(dueFmt) + '</span>' : '')
+      + (comments.length ? '<span style="font-size:11px;color:var(--muted)">💬 ' + comments.length + '</span>' : '')
+      + '</div>'
+      + '</div>'
+      + '<div class="act-right" onclick="event.stopPropagation()">'
+      + '<select class="st-pill ' + status + '" onchange="changeActionStatus(' + a.id + ',this.value,document.getElementById(\'ac-' + a.id + '\'))">'
+      + '<option value="open"'       + (status === 'open'       ? ' selected' : '') + '>Open</option>'
+      + '<option value="inprogress"' + (status === 'inprogress' ? ' selected' : '') + '>In Progress</option>'
+      + '<option value="complete"'   + (status === 'complete'   ? ' selected' : '') + '>Complete</option>'
+      + '</select>'
+      + '<button class="act-edit-btn" onclick="openEditAction(' + a.id + ')">✎ Edit</button>'
+      + '</div>'
+      + '</div>'
+      + '<div id="th-' + a.id + '" style="display:none">' + thread + '</div>'
+      + '</div>';
+  }).join('') || '<p class="empty">No actions yet — click + New Action to add one.</p>';
+}
+
+function toggleThread(id) {
+  var el = document.getElementById('th-' + id);
+  if (!el) return;
+  var open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  if (!open) {
+    setTimeout(function() {
+      var inp = document.getElementById('ci-' + id);
+      if (inp) inp.focus();
+    }, 50);
+  }
+}
+
+// ── FILTER + RENDER ───────────────────────────────────────────────────────
+function sortActions(actions) {
+  var order = { open: 0, inprogress: 1, complete: 2 };
+  return actions.slice().sort(function(a, b) {
+    var as = gcv(a, C.status).toLowerCase() || 'open';
+    var bs = gcv(b, C.status).toLowerCase() || 'open';
+    var ao = order[as] !== undefined ? order[as] : 0;
+    var bo = order[bs] !== undefined ? order[bs] : 0;
+    if (ao !== bo) return ao - bo;
+    var ad = gcv(a, C.due), bd = gcv(b, C.due);
+    if (!ad && !bd) return 0; if (!ad) return 1; if (!bd) return -1;
+    return ad < bd ? -1 : 1;
+  });
+}
+
+function applyActionFilter() {
+  var fp = (document.getElementById('filterPerson') ? document.getElementById('filterPerson').value : '').toLowerCase();
+  var fs = (document.getElementById('filterStatus')  ? document.getElementById('filterStatus').value  : '').toLowerCase();
+  var actions = getSnap(G.actions);
+  var filtered = actions.filter(function(a) {
+    if (fp && gcv(a, C.assignee).toLowerCase() !== fp) return false;
+    if (fs && (gcv(a, C.status).toLowerCase() || 'open') !== fs) return false;
+    return true;
+  });
+  document.getElementById('actionsList').innerHTML = buildActionCards(sortActions(filtered));
+  updateActionStats(actions);
+}
+
+function renderActions(g) {
+  var actions = g.actions;
+  var nOpen = 0, nIn = 0, nDone = 0;
+  actions.forEach(function(a) {
+    var s = gcv(a, C.status).toLowerCase() || 'open';
+    if (s === 'complete') nDone++; else if (s === 'inprogress') nIn++; else nOpen++;
+  });
+  var people = [];
+  actions.forEach(function(a) { var p = gcv(a, C.assignee); if (p && people.indexOf(p) === -1) people.push(p); });
+  people.sort();
+
+  document.getElementById('actionsContent').innerHTML =
+    '<div class="act-toolbar">'
+    + '<div class="act-filters">'
+    + '<label>Filter</label>'
+    + '<select class="fsel" id="filterPerson" onchange="applyActionFilter()">'
+    + '<option value="">All people</option>'
+    + people.map(function(p) { return '<option value="' + esc(p.toLowerCase()) + '">' + esc(p) + '</option>'; }).join('')
+    + '</select>'
+    + '<select class="fsel" id="filterStatus" onchange="applyActionFilter()">'
+    + '<option value="">All statuses</option>'
+    + '<option value="open">Open</option>'
+    + '<option value="inprogress">In Progress</option>'
+    + '<option value="complete">Complete</option>'
+    + '</select>'
+    + '</div>'
+    + '<div class="act-stats">'
+    + '<div class="act-stat"><div class="act-stat-num s-open" id="statOpen">' + nOpen + '</div><div class="act-stat-lbl">Open</div></div>'
+    + '<div class="act-stat"><div class="act-stat-num s-inprogress" id="statInProgress">' + nIn + '</div><div class="act-stat-lbl">In Progress</div></div>'
+    + '<div class="act-stat"><div class="act-stat-num s-complete" id="statDone">' + nDone + '</div><div class="act-stat-lbl">Complete</div></div>'
+    + '</div>'
+    + '</div>'
+    + '<button class="add-action-btn" onclick="openAddAction()">＋ New Action</button>'
+    + '<div id="actionsList">' + buildActionCards(sortActions(actions)) + '</div>';
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TAB 4: RESOURCES
+// ════════════════════════════════════════════════════════════════════
+//
+//  Board structure for Resources tab:
+//  Each item in G.resources_tab represents one resource or asset slot.
+//  C.resType   = "brief" | "article" | "imagery" | "asset"
+//  C.resAssetKey = for assets: "banner-desktop" | "banner-mobile" | "edm" | "bigscreen" | "socials"
+//  C.resUrl    = the link URL (SharePoint, Drive, etc.)
+//  C.resLabel  = optional display label override
+//
+//  Asset files are stored as URLs in C.resUrl — upload is handled client-side
+//  via the monday Files API (or you can paste a URL directly).
+
+// ── FIXED ASSET SLOTS (always shown, even if no board item yet) ───────────
+var ASSET_SLOTS = [
+  { key: 'banner-desktop', name: 'Website Banner — Desktop', icon: '🖥️' },
+  { key: 'banner-mobile',  name: 'Website Banner — Mobile',  icon: '📱' },
+  { key: 'edm',            name: 'EDM Graphic',              icon: '📧' },
+  { key: 'bigscreen',      name: 'Big Screen Asset',         icon: '📺' },
+  { key: 'socials',        name: 'Port Store Socials',        icon: '📸' }
+];
+
+// ── LINK CARD EDITORS ─────────────────────────────────────────────────────
+function editResLink(id, titleLabel) {
+  var item = getItem(id);
+  var url = gcv(item, C.resUrl);
+  openModal('Edit — ' + titleLabel,
+    '<div class="form-group"><label>URL</label><input type="url" id="frl_url" value="' + esc(url) + '" placeholder="https://portadelaide.sharepoint.com/…"></div>',
+    function() {
+      return setCol(id, BOARD_ID, C.resUrl, document.getElementById('frl_url').value.trim());
+    }, false, null, 'Save');
+  setTimeout(function() { var e = document.getElementById('frl_url'); if (e) { e.focus(); e.select(); } }, 50);
+}
+
+function addResLink(type, titleLabel) {
+  openModal('Add — ' + titleLabel,
+    '<div class="form-group"><label>URL</label><input type="url" id="frl_url" placeholder="https://…"></div>',
+    function() {
+      var url = document.getElementById('frl_url').value.trim();
+      if (!url) throw new Error('URL required');
+      var cv = {}; cv[C.resType] = type; cv[C.resUrl] = { url: url, text: url };
+      return createItem(G.resources_tab, titleLabel, cv);
+    }, false, null, 'Save');
+  setTimeout(function() { document.getElementById('frl_url').focus(); }, 50);
+}
+
+// ── ASSET SLOT EDITORS ────────────────────────────────────────────────────
+function editAssetSlot(slotKey, existingItem) {
+  var slot = ASSET_SLOTS.find(function(s) { return s.key === slotKey; });
+  var url = existingItem ? gcv(existingItem, C.resUrl) : '';
+  openModal('Upload / Link — ' + (slot ? slot.name : slotKey),
+    '<div class="form-group"><label>File URL (SharePoint, Google Drive, CDN, etc.)</label>'
+    + '<input type="url" id="fas_url" value="' + esc(url) + '" placeholder="https://…"></div>'
+    + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.6">'
+    + '💡 <strong>How to share from SharePoint:</strong> Open the file → Share → Copy link → Paste above. '
+    + 'For Google Drive: right-click → Get link → Anyone with link → Copy.'
+    + '</div>',
+    function() {
+      var url = document.getElementById('fas_url').value.trim();
+      if (!url) throw new Error('URL required');
+      if (existingItem) {
+        return setCol(existingItem.id, BOARD_ID, C.resUrl, url);
+      } else {
+        var cv = {};
+        cv[C.resType] = 'asset';
+        cv[C.resAssetKey] = slotKey;
+        cv[C.resUrl] = { url: url, text: url };
+        return createItem(G.resources_tab, slot ? slot.name : slotKey, cv);
+      }
+    }, existingItem ? true : false, existingItem ? existingItem.id : null, existingItem ? 'Update' : 'Save Link');
+  setTimeout(function() { var e = document.getElementById('fas_url'); if (e) { e.focus(); e.select(); } }, 50);
+}
+
+function removeAssetSlot(id) {
+  if (!confirm('Remove this asset link?')) return;
+  deleteItemApi(id).then(function() { toast('Removed'); loadData(); });
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderResources(g) {
+  // Split items into types
+  var briefItem   = g.resources_tab.find(function(i) { return gcv(i, C.resType) === 'brief'; });
+  var articleItem = g.resources_tab.find(function(i) { return gcv(i, C.resType) === 'article'; });
+  var imageryItem = g.resources_tab.find(function(i) { return gcv(i, C.resType) === 'imagery'; });
+  var assetItems  = g.resources_tab.filter(function(i) { return gcv(i, C.resType) === 'asset'; });
+
+  // ── Link Cards ──────────────────────────────────────────────────────────
+  function linkCard(icon, title, desc, item, type) {
+    var url = item ? gcv(item, C.resUrl) : '';
+    var hasUrl = url && url.indexOf('http') === 0;
+    var actionBtn = hasUrl
+      ? '<a href="' + esc(url) + '" target="_blank" class="res-btn teal" onclick="event.stopPropagation()">Open ↗</a>'
+      : '<span class="res-pill-tbc">To Be Added</span>';
+    var editCta = item
+      ? 'onclick="editResLink(\'' + item.id + '\',\'' + esc(title) + '\')"'
+      : 'onclick="addResLink(\'' + type + '\',\'' + esc(title) + '\')"';
+    return '<div class="res-link-card" ' + editCta + '>'
+      + '<div class="res-link-card-left">'
+      + '<span class="res-link-icon">' + icon + '</span>'
+      + '<div class="res-link-title">' + esc(title) + '</div>'
+      + '<div class="res-link-desc">' + esc(desc) + '</div>'
+      + '</div>'
+      + '<div style="flex-shrink:0">' + actionBtn + '</div>'
+      + '</div>';
+  }
+
+  var linksHTML =
+    '<div class="res-links-grid">'
+    + linkCard('📖', 'Storytelling Brief', 'Creative direction & narrative for this launch', briefItem, 'brief')
+    + linkCard('📰', 'Internal Article', 'Internal comms article for the launch', articleItem, 'article')
+    + linkCard('🖼️', 'Approved Retail Imagery', 'Final approved photography & imagery', imageryItem, 'imagery')
+    + '</div>';
+
+  // ── Asset Slots ──────────────────────────────────────────────────────────
+  var assetMap = {};
+  assetItems.forEach(function(item) { assetMap[gcv(item, C.resAssetKey)] = item; });
+
+  var assetsHTML = '<div class="asset-grid">' + ASSET_SLOTS.map(function(slot) {
+    var item = assetMap[slot.key] || null;
+    var url = item ? gcv(item, C.resUrl) : '';
+    var hasFile = url && url.indexOf('http') === 0;
+    var tag = hasFile
+      ? '<span class="asset-slot-tag asset-tag-live">Uploaded</span>'
+      : '<span class="asset-slot-tag asset-tag-tbc">Pending</span>';
+
+    var preview = hasFile
+      ? '<div class="asset-preview">'
+        + (url.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i)
+            ? '<img src="' + esc(url) + '" onerror="this.parentNode.innerHTML=\'<div class=\\\"asset-preview-empty\\\"><span>' + slot.icon + '</span><p>File Linked</p></div>\'">'
+            : '<div class="asset-preview-empty"><span>' + slot.icon + '</span><p>File Linked</p></div>')
+        + '</div>'
+      : '<div class="asset-preview"><div class="asset-preview-empty"><span>' + slot.icon + '</span><p>No file yet</p></div></div>';
+
+    var actions = '<div class="asset-actions">'
+      + (hasFile
+          ? '<a href="' + esc(url) + '" target="_blank" class="asset-btn asset-btn-dl">⬇ Download</a>'
+            + '<button class="asset-btn asset-btn-edit" onclick="editAssetSlot(\'' + slot.key + '\',' + (item ? 'getItem(' + item.id + ')' : 'null') + ')">✎ Replace</button>'
+            + '<button class="asset-btn asset-btn-remove" onclick="removeAssetSlot(\'' + item.id + '\')">✕</button>'
+          : '<button class="asset-btn asset-btn-edit" onclick="editAssetSlot(\'' + slot.key + '\',' + (item ? 'getItem(' + item.id + ')' : 'null') + ')">＋ Add Link</button>')
+      + '</div>';
+
+    return '<div class="asset-slot">'
+      + '<div class="asset-slot-head">'
+      + '<span class="asset-slot-name">' + slot.icon + ' ' + esc(slot.name) + '</span>'
+      + tag
+      + '</div>'
+      + '<div class="asset-slot-body">'
+      + preview
+      + actions
+      + '</div>'
+      + '</div>';
+  }).join('') + '</div>';
+
+  document.getElementById('resourcesContent').innerHTML =
+    '<div class="section">'
+    + secHead('01', 'Links', 'Key Documents', '', '')
+    + linksHTML
+    + '</div>'
+    + '<div class="section">'
+    + secHead('02', 'Assets', 'Approved Retail Assets', '', '')
+    + '<p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">Upload or link each asset once it\'s approved. Team members can download directly from here.</p>'
+    + assetsHTML
+    + '</div>';
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  RENDER DISPATCHER
+// ════════════════════════════════════════════════════════════════════
+function render(items) {
+  allItems = items;
+  bulletMap = {}; subitemMap = {};
+  var grouped = { story:[], timeline:[], graphics:[], resources:[], products:[], shoot:[], resources_tab:[], actions:[] };
+  items.forEach(function(item) {
+    var gid = item.group ? item.group.id : '';
+    if      (gid === G.story)     grouped.story.push(item);
+    else if (gid === G.timeline)  grouped.timeline.push(item);
+    else if (gid === G.graphics)  grouped.graphics.push(item);
+    else if (gid === G.resources) grouped.resources.push(item);
+    else if (gid === G.products)  grouped.products.push(item);
+    else if (gid === G.shoot)     grouped.shoot.push(item);
+    else if (gid === G.resources_tab) grouped.resources_tab.push(item);
+    else if (gid === G.actions)   grouped.actions.push(item);
+    if (item.subitems) {
+      item.subitems.forEach(function(s) {
+        var sku = '', bc = '';
+        if (s.column_values) s.column_values.forEach(function(cv) {
+          if (cv.id === C.sku) sku = cv.text || '';
+          if (cv.id === C.barcode) bc = cv.text || '';
+        });
+        subitemMap[s.id] = { name: s.name, sku: sku, barcode: bc };
+        bulletMap[s.id] = s.name;
+      });
+    }
+  });
+  renderOverview(grouped);
+  renderProducts(grouped);
+  renderShoot(grouped);
+  renderResources(grouped);
+  renderActions(grouped);
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  LOAD
+// ════════════════════════════════════════════════════════════════════
+function loadData() {
+  var btn = document.getElementById('rbtn');
+  btn.classList.add('loading');
+  setStatus('loading', 'Loading from Monday.com…');
+  api('query($bid:[ID!]){boards(ids:$bid){items_page(limit:200){items{id name group{id} column_values{id text value} subitems{id name column_values{id text}}}}}}',
+    { bid: [BOARD_ID] })
+  .then(function(j) {
+    // Handle both fetch shape { data: { boards: [...] } } and SDK shape { boards: [...] }
+    var d = j.data || j;
+    var board = d.boards && d.boards[0];
+    if (!board) throw new Error('Board not found — check BOARD_ID in config');
+    render(board.items_page.items);
+    setStatus('live', 'Loaded from Monday.com — ' + new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' }));
+  })
+  .catch(function(e) {
+    if (e.message && e.message.indexOf('No API token') === 0) return; // overlay shown already
+    setStatus('error', 'Load failed: ' + e.message);
+  })
+  .finally(function() { btn.classList.remove('loading'); });
+}
+
+function reload() { loadData(); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+document.getElementById('navTitle').textContent = LAUNCH_NAME + ' — Launch Hub';
+document.getElementById('navSubtitle').textContent = LAUNCH_SUBTITLE;
+document.title = LAUNCH_NAME + ' — Launch Hub';
+
+// Show "clear token" button only when running outside monday with a saved token
+if (!mondayClient && localStorage.getItem('ps_launch_hub_token')) {
+  document.getElementById('clearTokenBtn').style.display = 'flex';
+}
+
+if (BOARD_ID !== 'YOUR_BOARD_ID') {
+  loadData();
+} else {
+  setStatus('error', 'Configure BOARD_ID and group/column IDs in the CONFIG block at the top of this file');
+  document.getElementById('overviewContent').innerHTML =
+    '<div style="padding:40px 0;text-align:center">'
+    + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Hub Not Yet Configured</div>'
+    + '<div style="font-size:14px;color:var(--muted);line-height:1.8;max-width:480px;margin:0 auto">'
+    + 'Open this file in a text editor and fill in the <strong>CONFIG block</strong> near the top.<br>'
+    + 'You\'ll need: <code>BOARD_ID</code>, group IDs for each section, and column IDs matching your monday.com board.'
+    + '</div></div>';
+}
+</script>
+</body>
+</html>
