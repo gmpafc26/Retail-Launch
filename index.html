@@ -327,7 +327,7 @@ a{color:var(--teal)}a:hover{color:var(--teal-dark)}
 .tl-dot.today{background:var(--teal);box-shadow:0 0 0 3px rgba(0,181,184,.25)}
 .tl-dot.future{background:var(--white);border:2px solid var(--teal);box-shadow:0 0 0 2px rgba(0,181,184,.2)}
 .tl-line{width:2px;flex:1;min-height:24px;background:var(--border);margin-top:2px}
-.tl-card{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;margin-left:12px;margin-bottom:10px;transition:box-shadow .15s;position:relative}
+.tl-card{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;margin-left:12px;margin-bottom:10px;transition:box-shadow .15s;position:relative;cursor:pointer}
 .tl-card:hover{box-shadow:var(--shadow)}
 .tl-card:hover::after{content:"✎";position:absolute;top:12px;right:14px;font-size:11px;color:var(--teal);opacity:.5}
 .tl-card-date{font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
@@ -500,7 +500,7 @@ var C = {
 .tl-dot.today{background:var(--teal);box-shadow:0 0 0 3px rgba(0,181,184,.25)}
 .tl-dot.future{background:var(--white);border:2px solid var(--teal);box-shadow:0 0 0 2px rgba(0,181,184,.2)}
 .tl-line{width:2px;flex:1;min-height:24px;background:var(--border);margin-top:2px}
-.tl-card{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;margin-left:12px;margin-bottom:10px;transition:box-shadow .15s;position:relative}
+.tl-card{flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;margin-left:12px;margin-bottom:10px;transition:box-shadow .15s;position:relative;cursor:pointer}
 .tl-card:hover{box-shadow:var(--shadow)}
 .tl-card:hover::after{content:"✎";position:absolute;top:12px;right:14px;font-size:11px;color:var(--teal);opacity:.5}
 .tl-card-date{font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
@@ -798,41 +798,55 @@ function deleteBullet(sid) {
 }
 function editTimeline(id) {
   var item = getItem(id);
-  var label = gcv(item, C.label), colour = gcv(item, C.cardColour), sub = gcv(item, C.subTitle);
-  openModal('Edit Timeline Card',
-    '<div class="form-group"><label>Title</label><input type="text" id="ft_name" value="' + esc(item.name) + '"></div>'
-    + '<div class="form-row"><div class="form-group"><label>Label</label><input type="text" id="ft_label" value="' + esc(label) + '"></div>'
-    + '<div class="form-group"><label>Colour</label><select id="ft_colour">'
-    + '<option value="teal"' + (colour !== 'red' && colour !== 'amber' ? ' selected' : '') + '>Teal</option>'
-    + '<option value="amber"' + (colour === 'amber' ? ' selected' : '') + '>Amber</option>'
-    + '<option value="red"' + (colour === 'red' ? ' selected' : '') + '>Red</option>'
-    + '</select></div></div>'
-    + '<div class="form-group"><label>Subtitle / Detail</label><input type="text" id="ft_sub" value="' + esc(sub) + '"></div>',
-    function() {
-      var tasks = [];
-      var n = document.getElementById('ft_name').value.trim();
-      if (n && n !== item.name) tasks.push(rename(id, BOARD_ID, n));
-      tasks.push(setCol(id, BOARD_ID, C.label, document.getElementById('ft_label').value.trim()));
-      tasks.push(setCol(id, BOARD_ID, C.subTitle, document.getElementById('ft_sub').value.trim()));
-      tasks.push(setCol(id, BOARD_ID, C.cardColour, document.getElementById('ft_colour').value));
-      return Promise.all(tasks);
-    }, true, id, 'Save Changes');
+  var label = gcv(item, C.label), colour = gcv(item, C.cardColour), sub = gcv(item, C.subTitle), date = gcv(item, C.date);
+  var bodyHTML = [
+    '<div class="form-group"><label>Title</label><input type="text" id="ft_name" value="' + esc(item.name) + '"></div>',
+    '<div class="form-row">',
+    '<div class="form-group"><label>Label (e.g. AFL Round 16)</label><input type="text" id="ft_label" value="' + esc(label) + '"></div>',
+    '<div class="form-group"><label>Date</label><input type="date" id="ft_date" value="' + esc(date) + '"></div>',
+    '</div>',
+    '<div class="form-group"><label>Colour</label><select id="ft_colour">',
+    '<option value="teal"' + (colour !== 'red' && colour !== 'amber' ? ' selected' : '') + '>Teal</option>',
+    '<option value="amber"' + (colour === 'amber' ? ' selected' : '') + '>Amber</option>',
+    '<option value="red"' + (colour === 'red' ? ' selected' : '') + '>Red</option>',
+    '</select></div>',
+    '<div class="form-group"><label>Subtitle / Detail</label><input type="text" id="ft_sub" value="' + esc(sub) + '"></div>'
+  ].join('');
+  openModal('Edit Timeline Card', bodyHTML, function() {
+    var tasks = [];
+    var n = document.getElementById('ft_name').value.trim();
+    if (n && n !== item.name) tasks.push(rename(id, BOARD_ID, n));
+    tasks.push(setCol(id, BOARD_ID, C.label,     document.getElementById('ft_label').value.trim()));
+    tasks.push(setCol(id, BOARD_ID, C.subTitle,  document.getElementById('ft_sub').value.trim()));
+    tasks.push(setCol(id, BOARD_ID, C.cardColour,document.getElementById('ft_colour').value));
+    var fd = document.getElementById('ft_date').value;
+    if (fd) tasks.push(setCol(id, BOARD_ID, C.date, fd));
+    return Promise.all(tasks);
+  }, true, id, 'Save Changes');
 }
 function addTimeline() {
-  openModal('Add Timeline Card',
-    '<div class="form-group"><label>Title</label><input type="text" id="fat_name" placeholder="e.g. Launch Day"></div>'
-    + '<div class="form-row"><div class="form-group"><label>Label</label><input type="text" id="fat_label" placeholder="e.g. AFL Round 10"></div>'
-    + '<div class="form-group"><label>Colour</label><select id="fat_colour"><option value="teal">Teal</option><option value="amber">Amber</option><option value="red">Red</option></select></div></div>'
-    + '<div class="form-group"><label>Subtitle</label><input type="text" id="fat_sub"></div>',
-    function() {
-      var n = document.getElementById('fat_name').value.trim();
-      if (!n) throw new Error('Title required');
-      var cv = {};
-      cv[C.label] = document.getElementById('fat_label').value.trim();
-      cv[C.subTitle] = document.getElementById('fat_sub').value.trim();
-      cv[C.cardColour] = document.getElementById('fat_colour').value;
-      return createItem(G.timeline, n, cv);
-    }, false, null, 'Add Card');
+  var bodyHTML = [
+    '<div class="form-group"><label>Title</label><input type="text" id="fat_name" placeholder="e.g. Launch Day"></div>',
+    '<div class="form-row">',
+    '<div class="form-group"><label>Label (e.g. AFL Round 16)</label><input type="text" id="fat_label" placeholder="e.g. WC 1st June"></div>',
+    '<div class="form-group"><label>Date</label><input type="date" id="fat_date"></div>',
+    '</div>',
+    '<div class="form-group"><label>Colour</label><select id="fat_colour">',
+    '<option value="teal">Teal</option><option value="amber">Amber</option><option value="red">Red</option>',
+    '</select></div>',
+    '<div class="form-group"><label>Subtitle / Detail</label><input type="text" id="fat_sub"></div>'
+  ].join('');
+  openModal('Add Timeline Card', bodyHTML, function() {
+    var n = document.getElementById('fat_name').value.trim();
+    if (!n) throw new Error('Title required');
+    var cv = {};
+    cv[C.label]     = document.getElementById('fat_label').value.trim();
+    cv[C.subTitle]  = document.getElementById('fat_sub').value.trim();
+    cv[C.cardColour]= document.getElementById('fat_colour').value;
+    var fd = document.getElementById('fat_date').value;
+    if (fd) cv[C.date] = fd;
+    return createItem(G.timeline, n, cv);
+  }, false, null, 'Add Card');
   setTimeout(function() { document.getElementById('fat_name').focus(); }, 50);
 }
 function editGraphics(id) {
@@ -934,9 +948,9 @@ function renderOverview(g) {
     ? '<div class="tl-wrap">' + g.timeline.map(function(item) {
         var sub = gcv(item, C.subTitle);
         var dotCls = tlDotClass(item);
-        return '<div class="tl-row" onclick="editTimeline(' + item.id + ')">'
+        return '<div class="tl-row">'
           + '<div class="tl-left"><div class="' + dotCls + '"></div><div class="tl-line"></div></div>'
-          + '<div class="tl-card">'
+          + '<div class="tl-card" onclick="editTimeline(' + item.id + ')">'
           + '<div class="tl-card-date">' + tlFmtDate(item) + '</div>'
           + '<div class="tl-card-title">' + esc(item.name) + '</div>'
           + (sub ? '<div class="tl-card-notes">' + esc(sub) + '</div>' : '')
