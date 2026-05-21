@@ -610,9 +610,11 @@ function setCol(itemId, boardId, colId, val) {
 }
 
 function rename(id, bid, name) {
+  // change_item_name removed in monday API 2024-01
+  // Correct replacement: change_multiple_column_values with the name field
   return api(
-    'mutation($id:ID!,$bid:ID!,$n:String!){change_item_name(item_id:$id,board_id:$bid,name:$n){id}}',
-    { id: id, bid: bid, n: name }
+    'mutation($id:ID!,$bid:ID!,$cv:JSON!){change_multiple_column_values(item_id:$id,board_id:$bid,column_values:$cv,create_labels_if_missing:false){id name}}',
+    { id: id, bid: bid, cv: JSON.stringify({ name: name }) }
   );
 }
 
@@ -787,7 +789,7 @@ function editBullet(sid) {
     function() {
       var t = document.getElementById('fbe_text').value.trim();
       if (!t) throw new Error('Text required');
-      return api('mutation($id:ID!,$bid:ID!,$n:String!){change_item_name(item_id:$id,board_id:$bid,name:$n){id}}',
+      return api('mutation($id:ID!,$bid:ID!,$cv:JSON!){change_multiple_column_values(item_id:$id,board_id:$bid,column_values:$cv,create_labels_if_missing:false){id name}}',
         { id: sid, bid: SUB_BOARD, n: t });
     }, true, sid, 'Save');
   setTimeout(function() { var e = document.getElementById('fbe_text'); if (e) { e.focus(); e.select(); } }, 50);
@@ -1732,7 +1734,7 @@ function openEditEvent(id) {
       if (!newDate) throw new Error('Date required');
       var tasks = [];
       if (name !== item.name) tasks.push(
-        api('mutation($id:ID!,$bid:ID!,$n:String!){change_item_name(item_id:$id,board_id:$bid,name:$n){id}}',
+        api('mutation($id:ID!,$bid:ID!,$cv:JSON!){change_multiple_column_values(item_id:$id,board_id:$bid,column_values:$cv,create_labels_if_missing:false){id name}}',
           { id: id, bid: BOARD_ID, n: name })
       );
       var cv = {};
