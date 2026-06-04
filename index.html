@@ -179,7 +179,10 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .monday-badge{display:inline-flex;align-items:center;gap:5px;margin-top:4px}
 .monday-dot{width:6px;height:6px;background:#6161ff;border-radius:50%}
 
-@media(max-width:640px){.product-grid{grid-template-columns:1fr 1fr}.page-hero{flex-direction:column;align-items:flex-start}.page-hero-date{text-align:left;align-items:flex-start}.launch-select{min-width:120px}}
+.task-item.shoot-entry{background:#f0f9f9;border:1px solid #b2e8e8}
+.task-item.shoot-entry:hover{background:#e6f9f9;border-color:var(--teal)}
+.shoot-dot{flex-shrink:0;width:18px;height:18px;margin-top:0;border-radius:50%;background:var(--teal-pale);border:1.5px solid var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px}
+.shoot-tag{display:inline-flex;align-items:center;background:var(--teal);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:6px;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}.page-hero{flex-direction:column;align-items:flex-start}.page-hero-date{text-align:left;align-items:flex-start}.launch-select{min-width:120px}}
 </style>
 </head>
 <body>
@@ -465,8 +468,20 @@ function render() {
 function renderTimeline() {
   const items = state.timeline;
 
-  // Sort by date then time
-  const sorted = [...items].sort((a, b) => {
+  // Build combined list: regular tasks + shoot entries
+  const linkedShoots = allShoots.filter(s => linkedShootIds.includes(s.id));
+  const shootEntries = linkedShoots.map(s => ({
+    _isShoot: true,
+    id: s.id,
+    name: s.name,
+    _date: getShootCol(s, SCOLS.DATE) || '',
+    _players: getShootCol(s, SCOLS.PLAYERS) || '',
+    _location: getShootCol(s, SCOLS.LOCATION) || '',
+    _status: getShootCol(s, SCOLS.STATUS) || ''
+  }));
+
+  // Sort regular tasks by date then time
+  const sortedTasks = [...items].sort((a, b) => {
     const dateA = getCol(a, COLS.TIMELINE_DATE) || '9999-99-99';
     const dateB = getCol(b, COLS.TIMELINE_DATE) || '9999-99-99';
     if (dateA !== dateB) return dateA.localeCompare(dateB);
@@ -474,19 +489,43 @@ function renderTimeline() {
     return parseT(getCol(a, COLS.LAUNCH_TIME)) - parseT(getCol(b, COLS.LAUNCH_TIME));
   });
 
-  // Group by date
+  // Merge shoots into the sorted list grouped by date
   const byDate = {};
-  sorted.forEach(item => {
+  sortedTasks.forEach(item => {
     const d = getCol(item, COLS.TIMELINE_DATE) || 'No date set';
     if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(item);
+    byDate[d].push({ ...item, _isShoot: false });
+  });
+  shootEntries.forEach(shoot => {
+    const d = shoot._date || 'No date set';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(shoot);
   });
 
-  const blocksHTML = Object.keys(byDate).length ? Object.entries(byDate).map(([date, dateItems]) => `
+  // Sort date keys chronologically
+  const sortedDates = Object.keys(byDate).sort((a, b) => {
+    if (a === 'No date set') return 1;
+    if (b === 'No date set') return -1;
+    return a.localeCompare(b);
+  });
+
+  const blocksHTML = sortedDates.length ? sortedDates.map(date => `
     <div class="time-block">
       <div class="time-stamp">${date !== 'No date set' ? formatDate(date) : 'No date set'}</div>
       <ul class="task-list">
-        ${dateItems.map(item => {
+        ${byDate[date].map(item => {
+          if (item._isShoot) {
+            const meta = [item._players, item._location].filter(Boolean).join(' - ');
+            return `<li class="task-item shoot-entry">
+              <span class="shoot-dot">📸</span>
+              <span class="task-text">
+                <strong>${item.name}</strong>
+                <span class="shoot-tag">Shoot</span>
+                ${meta ? `<span style="color:var(--text-mid);font-size:11px;display:block;margin-top:2px">${meta}</span>` : ''}
+              </span>
+              <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" style="color:var(--teal);font-size:10px;font-weight:600;text-decoration:none;flex-shrink:0;align-self:center">View ↗</a>
+            </li>`;
+          }
           const time  = getCol(item, COLS.LAUNCH_TIME);
           const owner = getCol(item, COLS.OWNER);
           const note  = getCol(item, COLS.NOTES);
