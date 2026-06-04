@@ -6,25 +6,30 @@
 <title>Launch Hub | Port Adelaide FC</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root {
-  --navy:#1a1f2e; --navy-mid:#232838; --teal:#0abfbf; --teal-dim:#088a8a;
-  --teal-pale:#e6f9f9; --white:#fff; --body-bg:#f0f2f5; --card-bg:#fff;
-  --border:#e2e6ed; --text:#1a1f2e; --text-mid:#4a5568; --text-light:#8a94a6;
-  --amber:#f59e0b; --amber-pale:#fffbeb; --amber-border:#fde68a;
-  --green:#10b981; --green-pale:#ecfdf5; --red:#ef4444; --red-pale:#fef2f2;
-}
+:root{--navy:#1a1f2e;--navy-mid:#232838;--teal:#0abfbf;--teal-dim:#088a8a;--teal-pale:#e6f9f9;--white:#fff;--body-bg:#f0f2f5;--card-bg:#fff;--border:#e2e6ed;--text:#1a1f2e;--text-mid:#4a5568;--text-light:#8a94a6;--amber:#f59e0b;--amber-pale:#fffbeb;--amber-border:#fde68a;--green:#10b981;--red:#ef4444;--red-pale:#fef2f2}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.5}
+
 /* TOPBAR */
 .topbar{background:var(--navy);padding:0 24px;display:flex;align-items:center;gap:12px;height:56px;box-shadow:0 2px 8px rgba(0,0,0,.25);position:sticky;top:0;z-index:50}
-.topbar-icon{width:32px;height:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
-.topbar-title{font-size:15px;font-weight:700;color:#fff}
-.topbar-divider{width:1px;height:20px;background:rgba(255,255,255,.15);margin:0 4px}
-.topbar-sub{font-size:12px;color:rgba(255,255,255,.5)}
+.topbar-icon{width:32px;height:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:700;color:#fff;white-space:nowrap}
+.topbar-divider{width:1px;height:20px;background:rgba(255,255,255,.15);margin:0 4px;flex-shrink:0}
+.topbar-sub{font-size:12px;color:rgba(255,255,255,.5);white-space:nowrap}
 .topbar-spacer{flex:1}
-.launch-badge{background:var(--teal);color:var(--navy);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px}
+
+/* LAUNCH SWITCHER in topbar */
+.launch-switcher{display:flex;align-items:center;gap:8px}
+.launch-select-wrap{position:relative}
+.launch-select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:5px 28px 5px 10px;border-radius:8px;cursor:pointer;appearance:none;outline:none;min-width:160px}
+.launch-select option{background:var(--navy);color:#fff}
+.launch-select-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:rgba(255,255,255,.6);font-size:10px}
+.new-launch-btn{background:var(--teal);color:var(--navy);border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .12s}
+.new-launch-btn:hover{background:#08aaaa}
+
 /* PAGE */
 .page{max-width:960px;margin:0 auto;padding:24px 20px 60px}
+
 /* HERO */
 .page-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--navy);border-radius:14px;padding:24px 28px;margin-bottom:20px;flex-wrap:wrap;position:relative}
 .page-title{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.1}
@@ -37,6 +42,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .hero-edit-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .hero-edit-btn:hover{background:rgba(255,255,255,.2)}
+
 /* CARDS */
 .card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
 .card-header{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
@@ -45,6 +51,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .card-add-btn{background:var(--teal);color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .card-add-btn:hover{background:var(--teal-dim)}
 .card-body{padding:16px 18px}
+
 /* TIMELINE */
 .timeline{display:flex;flex-direction:column}
 .time-block{position:relative;padding-left:28px;padding-bottom:20px}
@@ -54,17 +61,20 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .time-block::after{content:'';position:absolute;left:4px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 0 0 2px var(--teal)}
 .time-stamp{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px}
 .task-list{list-style:none;display:flex;flex-direction:column;gap:6px}
-.task-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text);line-height:1.4;padding:6px 8px;border-radius:6px;border:1px solid transparent;transition:border-color .12s,background .12s}
+.task-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;border:1px solid transparent;transition:border-color .12s,background .12s}
 .task-item:hover{background:#f8f9fb;border-color:var(--border)}
-.task-dot{flex-shrink:0;width:6px;height:6px;margin-top:5px;border-radius:50%;background:var(--teal)}
-.task-text{flex:1}
-.owner-pill{display:inline-flex;align-items:center;background:var(--teal-pale);color:var(--teal-dim);font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;margin-left:5px;white-space:nowrap;vertical-align:middle}
-.item-actions{display:flex;gap:4px;margin-left:auto;flex-shrink:0;opacity:0;transition:opacity .12s}
 .task-item:hover .item-actions{opacity:1}
+.task-dot{flex-shrink:0;width:6px;height:6px;margin-top:5px;border-radius:50%;background:var(--teal)}
+.task-text{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+.owner-pill{display:inline-flex;align-items:center;background:var(--teal-pale);color:var(--teal-dim);font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;margin-left:5px;white-space:nowrap;vertical-align:middle}
+
+/* ITEM ACTIONS */
+.item-actions{display:flex;gap:4px;margin-left:auto;flex-shrink:0;opacity:0;transition:opacity .12s}
 .btn-edit{background:var(--teal-pale);color:var(--teal-dim);border:1px solid #b2e8e8;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
 .btn-edit:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
 .btn-delete{background:#fef2f2;color:var(--red);border:1px solid #fecaca;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
 .btn-delete:hover{background:var(--red);color:#fff}
+
 /* RESOURCES */
 .resource-group{margin-bottom:16px}
 .resource-group:last-child{margin-bottom:0}
@@ -75,20 +85,18 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .link-item:hover{border-color:var(--teal)}
 .link-item:hover .item-actions{opacity:1}
 .link-icon{flex-shrink:0;width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;background:#edf0f5}
-.link-icon.sp{background:#e8f0fe}
-.link-icon.ht{background:#fff0e8}
-.link-icon.ps{background:#e8f9f9}
-.link-icon.doc{background:#e8f0fe}
+.link-icon.sp{background:#e8f0fe}.link-icon.ht{background:#fff0e8}.link-icon.ps{background:#e8f9f9}.link-icon.doc{background:#e8f0fe}
 .link-label-text{flex:1;font-size:12.5px;font-weight:500;color:var(--text)}
-.view-pill{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:var(--teal-pale);color:var(--teal-dim);border:1px solid #b2e8e8;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;text-decoration:none;transition:background .12s,color .12s}
+.view-pill{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:var(--teal-pale);color:var(--teal-dim);border:1px solid #b2e8e8;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;text-decoration:none;transition:background .12s}
 .view-pill:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
 .copy-btn{flex-shrink:0;background:var(--teal);border:none;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .copy-btn:hover{background:var(--teal-dim)}
 .copy-btn.copied{background:var(--green)}
+
 /* PRODUCTS */
 .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .product-card{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fafbfc;display:flex;flex-direction:column;position:relative}
-.product-card:hover .item-actions{opacity:1}
+.product-card:hover .product-card-actions{opacity:1}
 .product-card-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .12s}
 .product-img-wrap{aspect-ratio:1/1;overflow:hidden;background:#edf0f5}
 .product-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
@@ -98,22 +106,31 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .product-copy-btn{width:100%;font-size:11px;font-weight:600;color:#fff;padding:6px 10px;border:none;border-radius:20px;background:var(--teal);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
 .product-copy-btn:hover{background:var(--teal-dim)}
 .product-copy-btn.copied{background:var(--green)}
+
 /* NOTES */
 .note-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.note-item{display:flex;gap:10px;padding:10px 14px;background:var(--amber-pale);border:1px solid var(--amber-border);border-left:3px solid var(--amber);border-radius:8px;font-size:13px;color:var(--text);line-height:1.5;position:relative}
+.note-item{display:flex;gap:10px;padding:10px 14px;background:var(--amber-pale);border:1px solid var(--amber-border);border-left:3px solid var(--amber);border-radius:8px;font-size:13px;line-height:1.5;position:relative}
 .note-item:hover .item-actions{opacity:1}
 .note-item.info{background:var(--teal-pale);border-color:#b2e8e8;border-left-color:var(--teal)}
 .note-icon{flex-shrink:0;font-size:14px;margin-top:1px}
 .note-text{flex:1}
-/* EMPTY STATE */
+
+/* EMPTY */
 .empty-state{text-align:center;padding:24px;color:var(--text-light);font-size:12px;border:1.5px dashed var(--border);border-radius:8px}
-/* MODAL OVERLAY */
+
+/* WELCOME SCREEN */
+.welcome{text-align:center;padding:60px 20px}
+.welcome h2{font-size:22px;font-weight:800;color:var(--navy);margin-bottom:12px}
+.welcome p{color:var(--text-mid);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto}
+.welcome-btn{background:var(--teal);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
+.welcome-btn:hover{background:var(--teal-dim)}
+
+/* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative;max-height:90vh;overflow-y:auto}
 .modal-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px}
-.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-light);line-height:1}
-.modal-close:hover{color:var(--text)}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-light)}
 .form-group{margin-bottom:14px}
 .form-label{font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block}
 .form-input,.form-textarea,.form-select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color .12s}
@@ -124,52 +141,62 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .btn-primary:hover{background:var(--teal-dim)}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .btn-secondary{background:#f0f2f5;color:var(--text-mid);border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
-.btn-secondary:hover{background:#e2e6ed}
 .btn-danger{background:var(--red-pale);color:var(--red);border:1px solid #fecaca;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-right:auto}
 .btn-danger:hover{background:var(--red);color:#fff}
-/* SAVING INDICATOR */
+
+/* TOAST */
 .saving-toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:600;z-index:300;opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
 .saving-toast.show{opacity:1;transform:translateY(0)}
 .saving-toast.success{background:var(--green)}
 .saving-toast.error{background:var(--red)}
+
 /* LOADING */
 .loading-state{text-align:center;padding:60px 20px;color:var(--text-light)}
 .loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
+
 /* FOOTER */
 .page-footer{max-width:960px;margin:0 auto;padding:0 20px 32px;text-align:center;font-size:11px;color:var(--text-light)}
 .monday-badge{display:inline-flex;align-items:center;gap:5px;margin-top:4px}
 .monday-dot{width:6px;height:6px;background:#6161ff;border-radius:50%}
-@media(max-width:640px){.product-grid{grid-template-columns:1fr 1fr}.page-hero{flex-direction:column;align-items:flex-start}.page-hero-date{text-align:left;align-items:flex-start}}
+
+@media(max-width:640px){.product-grid{grid-template-columns:1fr 1fr}.page-hero{flex-direction:column;align-items:flex-start}.page-hero-date{text-align:left;align-items:flex-start}.launch-select{min-width:120px}}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="topbar-icon">⚡</div>
-  <span class="topbar-title" id="topbar-title">Launch Hub</span>
+  <span class="topbar-title">Launch Hub</span>
   <div class="topbar-divider"></div>
-  <span class="topbar-sub">Port Adelaide FC — Retail</span>
+  <span class="topbar-sub">Port Adelaide FC</span>
   <div class="topbar-spacer"></div>
-  <span class="launch-badge">🚀 Launch Day</span>
+  <div class="launch-switcher">
+    <div class="launch-select-wrap">
+      <select class="launch-select" id="launch-select" onchange="switchLaunch(this.value)">
+        <option value="">Loading...</option>
+      </select>
+      <span class="launch-select-arrow">▾</span>
+    </div>
+    <button class="new-launch-btn" onclick="createNewLaunch()">+ New Launch</button>
+  </div>
 </div>
 
 <div class="page">
   <div class="page-hero" id="hero">
     <div>
-      <h1 class="page-title" id="hero-title">Loading...</h1>
-      <span class="title-sub">Launch Day</span>
+      <h1 class="page-title" id="hero-title">Launch Hub</h1>
+      <span class="title-sub">Port Adelaide FC — Retail</span>
     </div>
     <div class="page-hero-date">
       <div class="hero-date-label">Launch</div>
       <div class="hero-date-main" id="hero-date">—</div>
       <div class="hero-time"><span class="dot"></span><span id="hero-time">—</span></div>
     </div>
-    <button class="hero-edit-btn" onclick="openHeroEdit()">✏️ Edit Launch Info</button>
+    <button class="hero-edit-btn" id="hero-edit-btn" onclick="openHeroEdit()" style="display:none">✏️ Edit</button>
   </div>
-
   <div id="content">
-    <div class="loading-state"><div class="loading-spinner"></div><div>Loading from Monday.com...</div></div>
+    <div class="loading-state"><div class="loading-spinner"></div><div>Loading launches...</div></div>
   </div>
 </div>
 
@@ -178,17 +205,15 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
   <div class="monday-badge"><span class="monday-dot"></span> Powered by Monday.com</div>
 </div>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
   <div class="modal" id="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-title" id="modal-title">Edit</div>
+    <div class="modal-title" id="modal-title"></div>
     <div id="modal-body"></div>
     <div class="modal-actions" id="modal-actions"></div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="saving-toast" id="toast"></div>
 
 <script src="config.js"></script>
@@ -200,6 +225,9 @@ const GROUPS = LAUNCH_HUB_CONFIG.GROUPS;
 const COLS = LAUNCH_HUB_CONFIG.COLUMNS;
 
 // ── STATE ──
+let allItems = [];         // every item from the board
+let launches = [];         // list of unique launch names
+let currentLaunch = null;  // currently selected launch name
 let state = { launch: null, timeline: [], resources: [], products: [], notes: [] };
 
 // ── API ──
@@ -209,29 +237,25 @@ async function mondayQuery(query) {
     headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN, 'API-Version': '2024-01' },
     body: JSON.stringify({ query })
   });
-  const data = await res.json();
-  if (data.errors) throw new Error(data.errors[0].message);
-  return data.data;
+  const d = await res.json();
+  if (d.errors) throw new Error(d.errors[0].message);
+  return d.data;
 }
 
 async function createItem(groupId, name, colVals) {
   const vals = JSON.stringify(JSON.stringify(colVals));
-  const q = `mutation { create_item(board_id: ${BOARD_ID}, group_id: "${groupId}", item_name: ${JSON.stringify(name)}, column_values: ${vals}) { id name column_values { id value text } group { id } } }`;
-  const d = await mondayQuery(q);
-  return d.create_item;
+  const q = `mutation { create_item(board_id: ${BOARD_ID}, group_id: "${groupId}", item_name: ${JSON.stringify(name)}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
+  return (await mondayQuery(q)).create_item;
 }
 
 async function updateItem(itemId, colVals) {
   const vals = JSON.stringify(JSON.stringify(colVals));
-  const q = `mutation { change_multiple_column_values(board_id: ${BOARD_ID}, item_id: ${itemId}, column_values: ${vals}) { id name column_values { id value text } group { id } } }`;
-  const d = await mondayQuery(q);
-  return d.change_multiple_column_values;
+  const q = `mutation { change_multiple_column_values(board_id: ${BOARD_ID}, item_id: ${itemId}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
+  return (await mondayQuery(q)).change_multiple_column_values;
 }
 
-async function updateItemName(itemId, name) {
-  const q = `mutation { change_item_name: change_multiple_column_values(board_id: ${BOARD_ID}, item_id: ${itemId}, column_values: "{}") { id } }`;
-  const q2 = `mutation { change_item_name(board_id: ${BOARD_ID}, item_id: ${itemId}, value: ${JSON.stringify(name)}) { id } }`;
-  await mondayQuery(q2);
+async function updateName(itemId, name) {
+  await mondayQuery(`mutation { change_item_name(board_id: ${BOARD_ID}, item_id: ${itemId}, value: ${JSON.stringify(name)}) { id } }`);
 }
 
 async function deleteItem(itemId) {
@@ -261,8 +285,8 @@ function formatDate(d) {
 function getLinkIcon(url) {
   if (!url) return { cls: '', emoji: '🔗' };
   if (url.includes('sharepoint')) return { cls: 'sp', emoji: '📁' };
-  if (url.includes('hightail')) return { cls: 'ht', emoji: '📷' };
-  if (url.includes('portstore')) return { cls: 'ps', emoji: '🏬' };
+  if (url.includes('hightail'))   return { cls: 'ht', emoji: '📷' };
+  if (url.includes('portstore'))  return { cls: 'ps', emoji: '🏬' };
   if (url.includes('.docx') || url.includes('docs')) return { cls: 'doc', emoji: '📄' };
   return { cls: '', emoji: '🔗' };
 }
@@ -284,52 +308,124 @@ function copyLink(btn, url) {
 }
 
 // ── MODAL ──
-function openModal(title, bodyHTML, actionsHTML) {
+function openModal(title, body, actions) {
   document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-body').innerHTML = bodyHTML;
-  document.getElementById('modal-actions').innerHTML = actionsHTML;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-actions').innerHTML = actions;
   document.getElementById('modal-overlay').classList.add('open');
 }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOnOverlay(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
 
-function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-}
-
-function closeModalOnOverlay(e) {
-  if (e.target === document.getElementById('modal-overlay')) closeModal();
-}
-
-// ── LOAD DATA ──
-async function loadData() {
+// ── LOAD ALL DATA ──
+async function loadAll() {
   const data = await mondayQuery(`{
     boards(ids: [${BOARD_ID}]) {
-      items_page(limit: 200) {
+      items_page(limit: 500) {
         items { id name group { id } column_values { id value text } }
       }
     }
   }`);
-  const items = data.boards[0].items_page.items;
-  state.launch    = items.filter(i => i.group.id === GROUPS.LAUNCH_INFO)[0] || null;
+  allItems = data.boards[0].items_page.items;
+
+  // Derive unique launch names from all items that have a Launch column value
+  const nameSet = new Set();
+  allItems.forEach(item => {
+    const l = getCol(item, COLS.LAUNCH);
+    if (l) nameSet.add(l);
+  });
+  launches = Array.from(nameSet).sort();
+}
+
+// ── POPULATE SELECTOR ──
+function populateSelector() {
+  const sel = document.getElementById('launch-select');
+  sel.innerHTML = launches.length
+    ? launches.map(l => `<option value="${l}"${l === currentLaunch ? ' selected' : ''}>${l}</option>`).join('')
+    : `<option value="">No launches yet</option>`;
+}
+
+// ── FILTER STATE FOR CURRENT LAUNCH ──
+function filterState() {
+  const items = allItems.filter(i => getCol(i, COLS.LAUNCH) === currentLaunch);
+  state.launch    = items.find(i => i.group.id === GROUPS.LAUNCH_INFO) || null;
   state.timeline  = items.filter(i => i.group.id === GROUPS.TIMELINE);
   state.resources = items.filter(i => i.group.id === GROUPS.RESOURCES);
   state.products  = items.filter(i => i.group.id === GROUPS.PRODUCTS);
   state.notes     = items.filter(i => i.group.id === GROUPS.NOTES);
 }
 
+// ── SWITCH LAUNCH ──
+function switchLaunch(name) {
+  currentLaunch = name;
+  filterState();
+  render();
+}
+
+// ── CREATE NEW LAUNCH ──
+function createNewLaunch() {
+  openModal('Create New Launch',
+    `<div class="form-group"><label class="form-label">Launch Name</label><input class="form-input" id="f-new-launch" placeholder="e.g. SDNR 2026" autofocus></div>
+     <div class="form-group"><label class="form-label">Launch Date</label><input class="form-input" id="f-new-date" type="date"></div>
+     <div class="form-group"><label class="form-label">Launch Time</label><input class="form-input" id="f-new-time" placeholder="e.g. 10:00am"></div>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="saveNewLaunch()">Create Launch</button>`);
+  setTimeout(() => document.getElementById('f-new-launch')?.focus(), 50);
+}
+
+async function saveNewLaunch() {
+  const name = document.getElementById('f-new-launch').value.trim();
+  const date = document.getElementById('f-new-date').value;
+  const time = document.getElementById('f-new-time').value.trim();
+  if (!name) { alert('Launch name is required'); return; }
+  if (launches.includes(name)) { alert('A launch with this name already exists'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  try {
+    const colVals = {
+      [COLS.LAUNCH]: name,
+      [COLS.LAUNCH_DATE]: date ? { date } : null,
+      [COLS.LAUNCH_TIME]: time
+    };
+    const created = await createItem(GROUPS.LAUNCH_INFO, name, colVals);
+    allItems.push(created);
+    launches.push(name);
+    launches.sort();
+    currentLaunch = name;
+    filterState();
+    populateSelector();
+    render();
+    closeModal();
+    toast('Launch created!', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Create Launch'; }
+}
+
 // ── RENDER ──
 function render() {
-  // Hero
+  document.getElementById('hero-edit-btn').style.display = currentLaunch ? '' : 'none';
+
+  if (!currentLaunch) {
+    document.getElementById('hero-title').textContent = 'Launch Hub';
+    document.getElementById('hero-date').textContent = '—';
+    document.getElementById('hero-time').textContent = '—';
+    document.getElementById('content').innerHTML = `
+      <div class="welcome">
+        <h2>No launches yet</h2>
+        <p>Create your first launch to get started. You can add the timeline, resources, products and notes from here.</p>
+        <button class="welcome-btn" onclick="createNewLaunch()">+ Create First Launch</button>
+      </div>`;
+    return;
+  }
+
   if (state.launch) {
-    const name = state.launch.name;
     const date = getCol(state.launch, COLS.LAUNCH_DATE);
     const time = getCol(state.launch, COLS.LAUNCH_TIME);
-    document.getElementById('topbar-title').textContent = name;
-    document.getElementById('hero-title').textContent = name;
+    document.getElementById('hero-title').textContent = state.launch.name;
     document.getElementById('hero-date').textContent = formatDate(date);
     document.getElementById('hero-time').textContent = time || '—';
-    document.title = name + ' — Launch Hub | PAFC';
+    document.title = state.launch.name + ' — Launch Hub | PAFC';
   } else {
-    document.getElementById('hero-title').textContent = 'New Launch';
+    document.getElementById('hero-title').textContent = currentLaunch;
     document.getElementById('hero-date').textContent = 'Set launch date';
     document.getElementById('hero-time').textContent = '—';
   }
@@ -338,6 +434,7 @@ function render() {
     renderTimeline() + renderResources() + renderProducts() + renderNotes();
 }
 
+// ── RENDER SECTIONS ──
 function renderTimeline() {
   const items = state.timeline;
   const byTime = {};
@@ -346,21 +443,17 @@ function renderTimeline() {
     if (!byTime[t]) byTime[t] = [];
     byTime[t].push(item);
   });
-  const times = Object.keys(byTime).sort((a, b) => {
-    const parse = s => { const m = s.match(/(\d+):(\d+)/); return m ? parseInt(m[1])*60+parseInt(m[2]) : 9999; };
-    return parse(a) - parse(b);
+  const times = Object.keys(byTime).sort((a,b) => {
+    const p = s => { const m = s.match(/(\d+):(\d+)/); return m ? +m[1]*60 + +m[2] : 9999; };
+    return p(a) - p(b);
   });
-
-  const noteMap = { '10:15am': 'Rolls out once Georgie confirms everything is live.' };
-
   const blocksHTML = times.length ? times.map(t => `
     <div class="time-block">
       <div class="time-stamp">${t}</div>
-      ${noteMap[t] ? `<p style="font-size:11.5px;color:var(--text-light);font-style:italic;margin-bottom:8px;background:#f8f9fb;border-left:2px solid var(--teal);padding:6px 10px;border-radius:0 6px 6px 0">${noteMap[t]}</p>` : ''}
       <ul class="task-list">
         ${byTime[t].map(item => {
           const owner = getCol(item, COLS.OWNER);
-          const note = getCol(item, COLS.NOTES);
+          const note  = getCol(item, COLS.NOTES);
           const owners = owner ? owner.split('/').map(o => `<span class="owner-pill">${o.trim()}</span>`).join('') : '';
           return `<li class="task-item">
             <span class="task-dot"></span>
@@ -374,59 +467,38 @@ function renderTimeline() {
       </ul>
     </div>`).join('')
     : `<div class="empty-state">No timeline tasks yet — add your first task above</div>`;
-
   return `<div class="card">
-    <div class="card-header">
-      <span class="card-icon">🕐</span>
-      <span class="card-title">Launch Timeline</span>
-      <button class="card-add-btn" onclick="addTimelineItem()">+ Add Task</button>
-    </div>
+    <div class="card-header"><span class="card-icon">🕐</span><span class="card-title">Launch Timeline</span><button class="card-add-btn" onclick="addTimelineItem()">+ Add Task</button></div>
     <div class="card-body"><div class="timeline">${blocksHTML}</div></div>
   </div>`;
 }
 
 function renderResources() {
   const items = state.resources;
-  const websiteItems = items.filter(i => { const u = getCol(i, COLS.URL); return u && u.includes('portstore'); });
-  const otherItems   = items.filter(i => { const u = getCol(i, COLS.URL); return !u || !u.includes('portstore'); });
-
-  function linkRow(item) {
+  const websiteItems = items.filter(i => (getCol(i, COLS.URL)||'').includes('portstore'));
+  const otherItems   = items.filter(i => !(getCol(i, COLS.URL)||'').includes('portstore'));
+  function row(item) {
     const url = getCol(item, COLS.URL);
     const icon = getLinkIcon(url);
-    const isWebsite = url && url.includes('portstore');
+    const isPS = url && url.includes('portstore');
     return `<li class="link-item">
       <span class="link-icon ${icon.cls}">${icon.emoji}</span>
       <span class="link-label-text">${item.name}</span>
-      ${url && isWebsite ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
-      ${url && !isWebsite ? `<a href="${url}" target="_blank" class="view-pill">View ↗</a>` : ''}
-      <div class="item-actions" style="opacity:0">
+      ${url && isPS  ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
+      ${url && !isPS ? `<a href="${url}" target="_blank" class="view-pill">View ↗</a>` : ''}
+      <div class="item-actions">
         <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
         <button class="btn-delete" onclick="confirmDelete('${item.id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </li>`;
   }
-
-  const websiteHTML = websiteItems.length ? `
-    <div class="resource-group">
-      <div class="resource-group-title">Website Links <span class="not-live-badge">⚠ Not live yet</span></div>
-      <ul class="link-list">${websiteItems.map(linkRow).join('')}</ul>
-    </div>` : '';
-
-  const otherHTML = otherItems.length ? `
-    <div class="resource-group">
-      <div class="resource-group-title">Graphics, Photography & Storytelling</div>
-      <ul class="link-list">${otherItems.map(linkRow).join('')}</ul>
-    </div>` : '';
-
-  const emptyHTML = !items.length ? `<div class="empty-state">No resources yet — add your first link above</div>` : '';
-
   return `<div class="card">
-    <div class="card-header">
-      <span class="card-icon">🔗</span>
-      <span class="card-title">Resources</span>
-      <button class="card-add-btn" onclick="addResourceItem()">+ Add Link</button>
+    <div class="card-header"><span class="card-icon">🔗</span><span class="card-title">Resources</span><button class="card-add-btn" onclick="addResourceItem()">+ Add Link</button></div>
+    <div class="card-body">
+      ${websiteItems.length ? `<div class="resource-group"><div class="resource-group-title">Website Links <span class="not-live-badge">⚠ Not live yet</span></div><ul class="link-list">${websiteItems.map(row).join('')}</ul></div>` : ''}
+      ${otherItems.length   ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${otherItems.map(row).join('')}</ul></div>` : ''}
+      ${!items.length ? `<div class="empty-state">No resources yet — add your first link above</div>` : ''}
     </div>
-    <div class="card-body">${websiteHTML}${otherHTML}${emptyHTML}</div>
   </div>`;
 }
 
@@ -434,9 +506,9 @@ function renderProducts() {
   const items = state.products;
   const cardsHTML = items.length ? items.map(item => {
     const url = getCol(item, COLS.BIGCOMMERCE_URL);
-    const img = getCol(item, COLS.URL); // image URL stored in URL col for products
+    const img = getCol(item, COLS.URL);
     return `<div class="product-card">
-      <div class="product-card-actions item-actions">
+      <div class="product-card-actions">
         <button class="btn-edit" onclick="editProductItem('${item.id}')">Edit</button>
         <button class="btn-delete" onclick="confirmDelete('${item.id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
@@ -445,311 +517,214 @@ function renderProducts() {
       </div>
       <div class="product-info">
         <div class="product-name">${item.name}</div>
-        ${url ? `<button class="product-copy-btn" onclick="copyLink(this,'${url}')">Copy Product Link</button>` : '<span style="color:var(--text-light);font-size:11px">No URL set</span>'}
+        ${url ? `<button class="product-copy-btn" onclick="copyLink(this,'${url}')">Copy Product Link</button>` : `<span style="color:var(--text-light);font-size:11px">No URL set</span>`}
       </div>
     </div>`;
-  }).join('')
-  : `<div class="empty-state">No products yet — add your first product above</div>`;
-
+  }).join('') : `<div class="empty-state">No products yet — add your first product above</div>`;
   return `<div class="card">
-    <div class="card-header">
-      <span class="card-icon">👕</span>
-      <span class="card-title">Full Product Assortment</span>
-      <button class="card-add-btn" onclick="addProductItem()">+ Add Product</button>
-    </div>
+    <div class="card-header"><span class="card-icon">👕</span><span class="card-title">Full Product Assortment</span><button class="card-add-btn" onclick="addProductItem()">+ Add Product</button></div>
     <div class="card-body"><div class="product-grid">${cardsHTML}</div></div>
   </div>`;
 }
 
 function renderNotes() {
   const items = state.notes;
-  const notesHTML = items.length ? items.map(item => {
+  const html = items.length ? items.map(item => {
     const note = getCol(item, COLS.NOTES);
-    const severity = getCol(item, COLS.SEVERITY);
-    const isInfo = severity === 'Working on it';
+    const sev  = getCol(item, COLS.SEVERITY);
+    const isInfo = sev === 'Working on it';
     return `<li class="note-item${isInfo ? ' info' : ''}">
       <span class="note-icon">${isInfo ? 'ℹ️' : '⚠️'}</span>
       <span class="note-text"><strong>${item.name}</strong>${note ? ` — ${note}` : ''}</span>
-      <div class="item-actions" style="opacity:0;margin-left:auto">
+      <div class="item-actions" style="margin-left:auto">
         <button class="btn-edit" onclick="editNoteItem('${item.id}')">Edit</button>
         <button class="btn-delete" onclick="confirmDelete('${item.id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </li>`;
-  }).join('')
-  : `<div class="empty-state">No notes yet — add important notes above</div>`;
-
+  }).join('') : `<div class="empty-state">No notes yet — add important notes above</div>`;
   return `<div class="card">
-    <div class="card-header">
-      <span class="card-icon">⚠️</span>
-      <span class="card-title">Important Notes</span>
-      <button class="card-add-btn" onclick="addNoteItem()">+ Add Note</button>
-    </div>
-    <div class="card-body"><ul class="note-list">${notesHTML}</ul></div>
+    <div class="card-header"><span class="card-icon">⚠️</span><span class="card-title">Important Notes</span><button class="card-add-btn" onclick="addNoteItem()">+ Add Note</button></div>
+    <div class="card-body"><ul class="note-list">${html}</ul></div>
   </div>`;
 }
 
 // ── HERO EDIT ──
 function openHeroEdit() {
-  const launch = state.launch;
-  const name = launch ? launch.name : '';
-  const date = launch ? getCol(launch, COLS.LAUNCH_DATE) : '';
-  const time = launch ? getCol(launch, COLS.LAUNCH_TIME) : '';
-  openModal('Edit Launch Info', `
-    <div class="form-group"><label class="form-label">Launch Name</label><input class="form-input" id="f-launch-name" value="${name}" placeholder="e.g. Prison Bar 2026"></div>
-    <div class="form-group"><label class="form-label">Launch Date</label><input class="form-input" id="f-launch-date" type="date" value="${date}"></div>
-    <div class="form-group"><label class="form-label">Launch Time</label><input class="form-input" id="f-launch-time" value="${time}" placeholder="e.g. 10:00am"></div>
-  `, `
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveHeroEdit()">Save</button>
-  `);
+  const l = state.launch;
+  const name = l ? l.name : currentLaunch;
+  const date = l ? getCol(l, COLS.LAUNCH_DATE) : '';
+  const time = l ? getCol(l, COLS.LAUNCH_TIME) : '';
+  openModal('Edit Launch Info',
+    `<div class="form-group"><label class="form-label">Launch Name</label><input class="form-input" id="f-ln" value="${name}" placeholder="e.g. Prison Bar 2026"></div>
+     <div class="form-group"><label class="form-label">Launch Date</label><input class="form-input" id="f-ld" type="date" value="${date}"></div>
+     <div class="form-group"><label class="form-label">Launch Time</label><input class="form-input" id="f-lt" value="${time}" placeholder="e.g. 10:00am"></div>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="saveHeroEdit()">Save</button>`);
 }
 
 async function saveHeroEdit() {
-  const name = document.getElementById('f-launch-name').value.trim();
-  const date = document.getElementById('f-launch-date').value;
-  const time = document.getElementById('f-launch-time').value.trim();
+  const name = document.getElementById('f-ln').value.trim();
+  const date = document.getElementById('f-ld').value;
+  const time = document.getElementById('f-lt').value.trim();
   if (!name) { alert('Launch name is required'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary');
   btn.disabled = true; btn.textContent = 'Saving...';
   try {
-    const colVals = { [COLS.LAUNCH_DATE]: date ? { date } : null, [COLS.LAUNCH_TIME]: time };
+    const colVals = { [COLS.LAUNCH]: name, [COLS.LAUNCH_DATE]: date ? { date } : null, [COLS.LAUNCH_TIME]: time };
     if (state.launch) {
       const updated = await updateItem(state.launch.id, colVals);
-      if (name !== state.launch.name) await updateItemName(state.launch.id, name);
-      state.launch = { ...state.launch, name, column_values: updated.column_values };
+      if (name !== state.launch.name) await updateName(state.launch.id, name);
+      // update allItems
+      const idx = allItems.findIndex(i => i.id === state.launch.id);
+      if (idx > -1) allItems[idx] = { ...allItems[idx], name, column_values: updated.column_values };
     } else {
       const created = await createItem(GROUPS.LAUNCH_INFO, name, colVals);
-      state.launch = created;
+      allItems.push(created);
     }
-    render(); closeModal(); toast('Launch info saved', 'success');
+    // handle launch name change
+    if (name !== currentLaunch) {
+      // retag all items for this launch
+      const toRetag = allItems.filter(i => getCol(i, COLS.LAUNCH) === currentLaunch && i.group.id !== GROUPS.LAUNCH_INFO);
+      await Promise.all(toRetag.map(i => updateItem(i.id, { [COLS.LAUNCH]: name })));
+      toRetag.forEach(i => { const cv = i.column_values.find(c => c.id === COLS.LAUNCH); if(cv) cv.text = name; });
+      launches = launches.filter(l => l !== currentLaunch);
+      if (!launches.includes(name)) launches.push(name);
+      launches.sort();
+      currentLaunch = name;
+      populateSelector();
+    }
+    filterState(); render(); closeModal(); toast('Launch info saved', 'success');
   } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
 }
 
-// ── TIMELINE ──
-function timelineForm(item) {
-  const name = item ? item.name : '';
-  const time = item ? getCol(item, COLS.LAUNCH_TIME) : '';
-  const owner = item ? getCol(item, COLS.OWNER) : '';
-  const note = item ? getCol(item, COLS.NOTES) : '';
+// ── SAVE HELPERS ──
+async function saveItem(id, section, groupId, name, colVals) {
+  const allCols = { ...colVals, [COLS.LAUNCH]: currentLaunch };
+  if (id) {
+    const updated = await updateItem(id, allCols);
+    const item = state[section].find(i => i.id === id);
+    if (name !== item.name) await updateName(id, name);
+    item.name = name; item.column_values = updated.column_values;
+    const gi = allItems.findIndex(i => i.id === id);
+    if (gi > -1) { allItems[gi].name = name; allItems[gi].column_values = updated.column_values; }
+  } else {
+    const created = await createItem(groupId, name, allCols);
+    state[section].push(created);
+    allItems.push(created);
+  }
+}
+
+// ── TIMELINE CRUD ──
+function tlForm(item) {
   return `
-    <div class="form-group"><label class="form-label">Task Name</label><input class="form-input" id="f-tl-name" value="${name}" placeholder="e.g. Social roll out begins"></div>
-    <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="f-tl-time" value="${time}" placeholder="e.g. 10:15am"></div>
-    <div class="form-group"><label class="form-label">Owner(s)</label><input class="form-input" id="f-tl-owner" value="${owner}" placeholder="e.g. Samboy / Is (support)"></div>
-    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-tl-note" placeholder="Optional additional detail">${note}</textarea></div>`;
+    <div class="form-group"><label class="form-label">Task Name</label><input class="form-input" id="f-tl-n" value="${item?.name||''}" placeholder="e.g. Social roll out begins"></div>
+    <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="f-tl-t" value="${item ? getCol(item,COLS.LAUNCH_TIME) : ''}" placeholder="e.g. 10:15am"></div>
+    <div class="form-group"><label class="form-label">Owner(s)</label><input class="form-input" id="f-tl-o" value="${item ? getCol(item,COLS.OWNER) : ''}" placeholder="e.g. Samboy / Is (support)"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-tl-note" placeholder="Optional detail">${item ? getCol(item,COLS.NOTES) : ''}</textarea></div>`;
 }
-
-function addTimelineItem() {
-  openModal('Add Timeline Task', timelineForm(null), `
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveTimelineItem(null)">Add Task</button>`);
-}
-
-function editTimelineItem(id) {
-  const item = state.timeline.find(i => i.id === id);
-  openModal('Edit Timeline Task', timelineForm(item), `
-    <button class="btn-danger" onclick="confirmDelete('${id}','timeline','${item.name.replace(/'/g,"\\'")}')">Delete</button>
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveTimelineItem('${id}')">Save</button>`);
-}
-
+function addTimelineItem() { openModal('Add Timeline Task', tlForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTimelineItem(null)">Add Task</button>`); }
+function editTimelineItem(id) { const item = state.timeline.find(i=>i.id===id); openModal('Edit Timeline Task', tlForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','timeline','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTimelineItem('${id}')">Save</button>`); }
 async function saveTimelineItem(id) {
-  const name  = document.getElementById('f-tl-name').value.trim();
-  const time  = document.getElementById('f-tl-time').value.trim();
-  const owner = document.getElementById('f-tl-owner').value.trim();
-  const note  = document.getElementById('f-tl-note').value.trim();
-  if (!name) { alert('Task name is required'); return; }
-  const btn = document.querySelector('#modal-actions .btn-primary');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  const name = document.getElementById('f-tl-n').value.trim();
+  if (!name) { alert('Task name required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    const colVals = { [COLS.LAUNCH_TIME]: time, [COLS.OWNER]: owner, [COLS.NOTES]: note };
-    if (id) {
-      const updated = await updateItem(id, colVals);
-      const item = state.timeline.find(i => i.id === id);
-      if (name !== item.name) await updateItemName(id, name);
-      item.name = name; item.column_values = updated.column_values;
-    } else {
-      const created = await createItem(GROUPS.TIMELINE, name, colVals);
-      state.timeline.push(created);
-    }
-    render(); closeModal(); toast(id ? 'Task updated' : 'Task added', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
+    await saveItem(id,'timeline',GROUPS.TIMELINE, name, { [COLS.LAUNCH_TIME]: document.getElementById('f-tl-t').value.trim(), [COLS.OWNER]: document.getElementById('f-tl-o').value.trim(), [COLS.NOTES]: document.getElementById('f-tl-note').value.trim() });
+    render(); closeModal(); toast(id?'Task updated':'Task added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
 }
 
-// ── RESOURCES ──
-function resourceForm(item) {
-  const name = item ? item.name : '';
-  const url  = item ? getCol(item, COLS.URL) : '';
+// ── RESOURCES CRUD ──
+function resForm(item) {
   return `
-    <div class="form-group"><label class="form-label">Label</label><input class="form-input" id="f-res-name" value="${name}" placeholder="e.g. Social Graphics"></div>
-    <div class="form-group"><label class="form-label">URL</label><input class="form-input" id="f-res-url" value="${url}" placeholder="https://..."></div>`;
+    <div class="form-group"><label class="form-label">Label</label><input class="form-input" id="f-res-n" value="${item?.name||''}" placeholder="e.g. Social Graphics"></div>
+    <div class="form-group"><label class="form-label">URL</label><input class="form-input" id="f-res-u" value="${item ? getCol(item,COLS.URL) : ''}" placeholder="https://..."></div>`;
 }
-
-function addResourceItem() {
-  openModal('Add Resource Link', resourceForm(null), `
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveResourceItem(null)">Add Link</button>`);
-}
-
-function editResourceItem(id) {
-  const item = state.resources.find(i => i.id === id);
-  openModal('Edit Resource', resourceForm(item), `
-    <button class="btn-danger" onclick="confirmDelete('${id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveResourceItem('${id}')">Save</button>`);
-}
-
+function addResourceItem() { openModal('Add Resource', resForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem(null)">Add Link</button>`); }
+function editResourceItem(id) { const item = state.resources.find(i=>i.id===id); openModal('Edit Resource', resForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem('${id}')">Save</button>`); }
 async function saveResourceItem(id) {
-  const name = document.getElementById('f-res-name').value.trim();
-  const url  = document.getElementById('f-res-url').value.trim();
-  if (!name) { alert('Label is required'); return; }
-  const btn = document.querySelector('#modal-actions .btn-primary');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  const name = document.getElementById('f-res-n').value.trim();
+  const url  = document.getElementById('f-res-u').value.trim();
+  if (!name) { alert('Label required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    const colVals = { [COLS.URL]: url ? { url, text: name } : null };
-    if (id) {
-      const updated = await updateItem(id, colVals);
-      const item = state.resources.find(i => i.id === id);
-      if (name !== item.name) await updateItemName(id, name);
-      item.name = name; item.column_values = updated.column_values;
-    } else {
-      const created = await createItem(GROUPS.RESOURCES, name, colVals);
-      state.resources.push(created);
-    }
-    render(); closeModal(); toast(id ? 'Resource updated' : 'Resource added', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
+    await saveItem(id,'resources',GROUPS.RESOURCES, name, { [COLS.URL]: url ? {url,text:name} : null });
+    render(); closeModal(); toast(id?'Resource updated':'Resource added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
 }
 
-// ── PRODUCTS ──
-function productForm(item) {
-  const name = item ? item.name : '';
-  const url  = item ? getCol(item, COLS.BIGCOMMERCE_URL) : '';
-  const img  = item ? getCol(item, COLS.URL) : '';
+// ── PRODUCTS CRUD ──
+function prodForm(item) {
   return `
-    <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="f-prod-name" value="${name}" placeholder="e.g. PA Macron 2026 Prison Bar Guernsey - Adult"></div>
-    <div class="form-group"><label class="form-label">Product URL (BigCommerce)</label><input class="form-input" id="f-prod-url" value="${url}" placeholder="https://portstore.com.au/..."></div>
-    <div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f-prod-img" value="${img}" placeholder="https://cdn11.bigcommerce.com/..."><p style="font-size:11px;color:var(--text-light);margin-top:4px">Paste the direct image URL from BigCommerce CDN</p></div>`;
+    <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="f-p-n" value="${item?.name||''}" placeholder="e.g. PA Macron 2026 Prison Bar Guernsey - Adult"></div>
+    <div class="form-group"><label class="form-label">Product URL (BigCommerce)</label><input class="form-input" id="f-p-u" value="${item ? getCol(item,COLS.BIGCOMMERCE_URL) : ''}" placeholder="https://portstore.com.au/..."></div>
+    <div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f-p-i" value="${item ? getCol(item,COLS.URL) : ''}" placeholder="https://cdn11.bigcommerce.com/..."><p style="font-size:11px;color:var(--text-light);margin-top:4px">Paste the direct image URL from BigCommerce CDN</p></div>`;
 }
-
-function addProductItem() {
-  openModal('Add Product', productForm(null), `
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`);
-}
-
-function editProductItem(id) {
-  const item = state.products.find(i => i.id === id);
-  openModal('Edit Product', productForm(item), `
-    <button class="btn-danger" onclick="confirmDelete('${id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button>
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveProductItem('${id}')">Save</button>`);
-}
-
+function addProductItem() { openModal('Add Product', prodForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`); }
+function editProductItem(id) { const item = state.products.find(i=>i.id===id); openModal('Edit Product', prodForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem('${id}')">Save</button>`); }
 async function saveProductItem(id) {
-  const name = document.getElementById('f-prod-name').value.trim();
-  const url  = document.getElementById('f-prod-url').value.trim();
-  const img  = document.getElementById('f-prod-img').value.trim();
-  if (!name) { alert('Product name is required'); return; }
-  const btn = document.querySelector('#modal-actions .btn-primary');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  const name = document.getElementById('f-p-n').value.trim();
+  const url  = document.getElementById('f-p-u').value.trim();
+  const img  = document.getElementById('f-p-i').value.trim();
+  if (!name) { alert('Product name required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    const colVals = {
-      [COLS.BIGCOMMERCE_URL]: url ? { url, text: name } : null,
-      [COLS.URL]: img ? { url: img, text: 'Image' } : null
-    };
-    if (id) {
-      const updated = await updateItem(id, colVals);
-      const item = state.products.find(i => i.id === id);
-      if (name !== item.name) await updateItemName(id, name);
-      item.name = name; item.column_values = updated.column_values;
-    } else {
-      const created = await createItem(GROUPS.PRODUCTS, name, colVals);
-      state.products.push(created);
-    }
-    render(); closeModal(); toast(id ? 'Product updated' : 'Product added', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
+    await saveItem(id,'products',GROUPS.PRODUCTS, name, { [COLS.BIGCOMMERCE_URL]: url?{url,text:name}:null, [COLS.URL]: img?{url:img,text:'Image'}:null });
+    render(); closeModal(); toast(id?'Product updated':'Product added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
 }
 
-// ── NOTES ──
+// ── NOTES CRUD ──
 function noteForm(item) {
-  const name = item ? item.name : '';
-  const note = item ? getCol(item, COLS.NOTES) : '';
-  const sev  = item ? getCol(item, COLS.SEVERITY) : 'Stuck';
+  const sev = item ? getCol(item,COLS.SEVERITY) : 'Stuck';
   return `
-    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="f-note-name" value="${name}" placeholder="e.g. No wool guernseys in this launch"></div>
-    <div class="form-group"><label class="form-label">Detail</label><textarea class="form-textarea" id="f-note-text" placeholder="Additional detail...">${note}</textarea></div>
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="f-nt-n" value="${item?.name||''}" placeholder="e.g. No wool guernseys"></div>
+    <div class="form-group"><label class="form-label">Detail</label><textarea class="form-textarea" id="f-nt-t" placeholder="Additional detail...">${item ? getCol(item,COLS.NOTES) : ''}</textarea></div>
     <div class="form-group"><label class="form-label">Type</label>
-      <select class="form-select" id="f-note-sev">
+      <select class="form-select" id="f-nt-s">
         <option value="Stuck" ${sev==='Stuck'?'selected':''}>⚠️ Warning</option>
         <option value="Working on it" ${sev==='Working on it'?'selected':''}>ℹ️ Info</option>
       </select>
     </div>`;
 }
-
-function addNoteItem() {
-  openModal('Add Note', noteForm(null), `
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveNoteItem(null)">Add Note</button>`);
-}
-
-function editNoteItem(id) {
-  const item = state.notes.find(i => i.id === id);
-  openModal('Edit Note', noteForm(item), `
-    <button class="btn-danger" onclick="confirmDelete('${id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button>
-    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn-primary" onclick="saveNoteItem('${id}')">Save</button>`);
-}
-
+function addNoteItem() { openModal('Add Note', noteForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveNoteItem(null)">Add Note</button>`); }
+function editNoteItem(id) { const item = state.notes.find(i=>i.id===id); openModal('Edit Note', noteForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveNoteItem('${id}')">Save</button>`); }
 async function saveNoteItem(id) {
-  const name = document.getElementById('f-note-name').value.trim();
-  const note = document.getElementById('f-note-text').value.trim();
-  const sev  = document.getElementById('f-note-sev').value;
-  if (!name) { alert('Title is required'); return; }
-  const btn = document.querySelector('#modal-actions .btn-primary');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  const name = document.getElementById('f-nt-n').value.trim();
+  if (!name) { alert('Title required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    const colVals = { [COLS.NOTES]: note, [COLS.SEVERITY]: { label: sev } };
-    if (id) {
-      const updated = await updateItem(id, colVals);
-      const item = state.notes.find(i => i.id === id);
-      if (name !== item.name) await updateItemName(id, name);
-      item.name = name; item.column_values = updated.column_values;
-    } else {
-      const created = await createItem(GROUPS.NOTES, name, colVals);
-      state.notes.push(created);
-    }
-    render(); closeModal(); toast(id ? 'Note updated' : 'Note added', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
+    await saveItem(id,'notes',GROUPS.NOTES, name, { [COLS.NOTES]: document.getElementById('f-nt-t').value.trim(), [COLS.SEVERITY]: {label:document.getElementById('f-nt-s').value} });
+    render(); closeModal(); toast(id?'Note updated':'Note added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
 }
 
 // ── DELETE ──
 function confirmDelete(id, section, name) {
-  openModal('Delete Item', `
-    <p style="color:var(--text-mid);line-height:1.6">Are you sure you want to delete <strong>${name}</strong>? This will remove it from Monday.com and cannot be undone.</p>`,
-  `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
-   <button class="btn-danger" style="margin-right:0" onclick="doDelete('${id}','${section}')">Delete</button>`);
+  openModal('Delete Item',
+    `<p style="color:var(--text-mid);line-height:1.6">Are you sure you want to delete <strong>${name}</strong>? This cannot be undone.</p>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-danger" style="margin-right:0" onclick="doDelete('${id}','${section}')">Delete</button>`);
 }
-
 async function doDelete(id, section) {
-  const btn = document.querySelector('#modal-actions .btn-danger');
-  btn.disabled = true; btn.textContent = 'Deleting...';
+  const btn = document.querySelector('#modal-actions .btn-danger'); btn.disabled=true; btn.textContent='Deleting...';
   try {
     await deleteItem(id);
-    state[section] = state[section].filter(i => i.id !== id);
-    render(); closeModal(); toast('Item deleted', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Delete'; }
+    state[section] = state[section].filter(i=>i.id!==id);
+    allItems = allItems.filter(i=>i.id!==id);
+    render(); closeModal(); toast('Deleted','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Delete'; }
 }
 
 // ── INIT ──
 async function init() {
   try {
-    await loadData();
+    await loadAll();
+    currentLaunch = launches[launches.length - 1] || null; // default to most recent
+    populateSelector();
+    if (currentLaunch) filterState();
     render();
   } catch(e) {
-    document.getElementById('content').innerHTML = `
-      <div style="background:var(--red-pale);border:1px solid #fecaca;border-radius:12px;padding:20px;text-align:center;color:var(--red)">
-        <strong>Could not load from Monday.com</strong><br>
-        <span style="font-size:12px;opacity:.8">${e.message}</span>
-      </div>`;
+    document.getElementById('content').innerHTML = `<div style="background:var(--red-pale);border:1px solid #fecaca;border-radius:12px;padding:20px;text-align:center;color:var(--red)"><strong>Could not load from Monday.com</strong><br><span style="font-size:12px;opacity:.8">${e.message}</span></div>`;
   }
 }
 
