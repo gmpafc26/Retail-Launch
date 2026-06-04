@@ -1,6 +1,16 @@
 const LAUNCH_HUB_CONFIG = {
   MONDAY_TOKEN: "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NzcwMzM3NSwiYWFpIjoxMSwidWlkIjo4MjY0Njg5NiwiaWFkIjoiMjAyNi0wNS0xM1QwMDo0NjoxMC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6NzA5Mjc2LCJyZ24iOiJ1c2UxIn0.yD_YwplvFrgMpNEUU-rGQNz6GscMVfTiomF1PW4fB0c",
   BOARD_ID: "18388701820",
+  SHOOT_BOARD_ID: "18412284375",
+  SHOOT_GROUPS: { REQUESTS: "group_mm35jzs7" },
+  SHOOT_COLS: {
+    DATE:     "date_mm35z010",
+    PLAYERS:  "text_mm35qb0p",
+    LOCATION: "text_mm353efc",
+    STATUS:   "color_mm351c4p",
+    NOTES:    "long_text_mm352xyz",
+    TYPE:     "dropdown_mm38f2g1"
+  },
   GROUPS: {
     LAUNCH_INFO: "group_title",
     TIMELINE:    "topics",
@@ -13,6 +23,7 @@ const LAUNCH_HUB_CONFIG = {
     LAUNCH:          "text_mm405vsn",
     LAUNCH_DATE:     "date_mm40n3fz",
     LAUNCH_TIME:     "text_mm4027gn",
+    TIMELINE_DATE:   "date4",
     OWNER:           "text_mm40pc5j",
     NOTES:           "long_text_mm405hdn",
     URL:             "link_mm40t1br",
