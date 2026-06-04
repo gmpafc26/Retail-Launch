@@ -549,7 +549,7 @@ function renderShoots() {
         ${status ? `<span class="status-pill ${statusClass(status)}">${status}</span>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-        <a href="https://pafc-team.monday.com/boards/${SHOOT_BOARD_ID}" target="_blank" class="shoot-link">View in Monday ↗</a>
+        <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" class="shoot-link">View in ASA Hub ↗</a>
         <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif" onclick="unlinkShoot('${shoot.id}')">Remove</button>
       </div>
     </div>`;
@@ -563,7 +563,7 @@ function renderShoots() {
     </div>
     <div class="card-body">
       <div class="shoot-list">${shootsHTML}</div>
-      <p style="font-size:10px;color:var(--text-light);margin-top:10px;text-align:right">Shoot details are managed in the <a href="https://pafc-team.monday.com/boards/${SHOOT_BOARD_ID}" target="_blank" style="color:var(--teal)">ASA/CBA Hub</a> - any updates there will reflect here automatically.</p>
+      <p style="font-size:11px;color:var(--text-light);margin-top:10px;text-align:right">To view or edit shoot details, visit the <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" style="color:var(--teal);font-weight:600">ASA Hub ↗</a></p>
     </div>
   </div>`;
 }
