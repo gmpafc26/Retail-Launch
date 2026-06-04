@@ -630,6 +630,8 @@ async function saveShootIds() {
   const cv = state.launch.column_values?.find(c => c.id === COLS.NOTES);
   if (cv) cv.value = JSON.stringify({ text: payload });
 }
+
+function renderResources() {
   const items = state.resources;
   const websiteItems = items.filter(i => (getCol(i, COLS.URL)||'').includes('portstore'));
   const otherItems   = items.filter(i => !(getCol(i, COLS.URL)||'').includes('portstore'));
