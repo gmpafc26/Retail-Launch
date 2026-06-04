@@ -31,7 +31,26 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .page{max-width:960px;margin:0 auto;padding:24px 20px 60px}
 
 /* HERO */
-.page-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--navy);border-radius:14px;padding:24px 28px;margin-bottom:20px;flex-wrap:wrap;position:relative}
+.page-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;background:var(--navy);border-radius:14px;padding:24px 28px;margin-bottom:20px;flex-wrap:wrap}
+.hero-left{display:flex;flex-direction:column;gap:4px}
+
+/* SHOOT CARD */
+.shoot-list{display:flex;flex-direction:column;gap:8px}
+.shoot-item{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:#fafbfc;align-items:flex-start}
+.shoot-date-block{flex-shrink:0;background:var(--navy);color:#fff;border-radius:8px;padding:6px 10px;text-align:center;min-width:52px}
+.shoot-date-day{font-size:18px;font-weight:800;line-height:1}
+.shoot-date-month{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-top:2px}
+.shoot-details{flex:1}
+.shoot-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.shoot-meta{font-size:11px;color:var(--text-light);display:flex;flex-wrap:wrap;gap:8px}
+.shoot-meta span{display:flex;align-items:center;gap:3px}
+.shoot-status{flex-shrink:0}
+.status-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;background:#f0f2f5;color:var(--text-mid)}
+.status-pill.confirmed{background:#ecfdf5;color:#065f46}
+.status-pill.planned{background:#eff6ff;color:#1e40af}
+.status-pill.pending{background:var(--amber-pale);color:#92670a}
+.shoot-link{font-size:10px;color:var(--teal);text-decoration:none;font-weight:600;flex-shrink:0;align-self:center}
+.shoot-link:hover{text-decoration:underline}
 .page-title{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.1}
 .title-sub{font-size:14px;font-weight:500;color:rgba(255,255,255,.45);display:block;margin-top:3px}
 .page-hero-date{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
@@ -40,7 +59,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .hero-time{display:flex;align-items:center;gap:7px;font-size:18px;font-weight:700;color:var(--teal);margin-top:2px}
 .dot{width:8px;height:8px;background:var(--teal);border-radius:50%;animation:pulse 1.8s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
-.hero-edit-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
+.hero-edit-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s;flex-shrink:0;align-self:flex-start}
 .hero-edit-btn:hover{background:rgba(255,255,255,.2)}
 
 /* CARDS */
@@ -184,14 +203,14 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 
 <div class="page">
   <div class="page-hero" id="hero">
-    <div>
+    <div class="hero-left">
       <h1 class="page-title" id="hero-title">Launch Hub</h1>
-      <span class="title-sub">Port Adelaide FC — Retail</span>
+      <span class="title-sub">Port Adelaide FC - Retail</span>
     </div>
     <div class="page-hero-date">
       <div class="hero-date-label">Launch</div>
-      <div class="hero-date-main" id="hero-date">—</div>
-      <div class="hero-time"><span class="dot"></span><span id="hero-time">—</span></div>
+      <div class="hero-date-main" id="hero-date">-</div>
+      <div class="hero-time"><span class="dot"></span><span id="hero-time">-</span></div>
     </div>
     <button class="hero-edit-btn" id="hero-edit-btn" onclick="openHeroEdit()" style="display:none">✏️ Edit</button>
   </div>
@@ -221,13 +240,17 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 const API = 'https://api.monday.com/v2';
 const TOKEN = LAUNCH_HUB_CONFIG.MONDAY_TOKEN;
 const BOARD_ID = LAUNCH_HUB_CONFIG.BOARD_ID;
+const SHOOT_BOARD_ID = LAUNCH_HUB_CONFIG.SHOOT_BOARD_ID;
 const GROUPS = LAUNCH_HUB_CONFIG.GROUPS;
 const COLS = LAUNCH_HUB_CONFIG.COLUMNS;
+const SCOLS = LAUNCH_HUB_CONFIG.SHOOT_COLS;
 
 // ── STATE ──
-let allItems = [];         // every item from the board
-let launches = [];         // list of unique launch names
-let currentLaunch = null;  // currently selected launch name
+let allItems = [];
+let allShoots = [];        // live from shoot board
+let launches = [];
+let currentLaunch = null;
+let linkedShootIds = [];   // shoot item IDs linked to current launch
 let state = { launch: null, timeline: [], resources: [], products: [], notes: [] };
 
 // ── API ──
@@ -278,7 +301,7 @@ function getCol(item, colId) {
 }
 
 function formatDate(d) {
-  if (!d) return '—';
+  if (!d) return '-';
   return new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
@@ -319,21 +342,17 @@ function closeModalOnOverlay(e) { if (e.target === document.getElementById('moda
 
 // ── LOAD ALL DATA ──
 async function loadAll() {
-  const data = await mondayQuery(`{
-    boards(ids: [${BOARD_ID}]) {
-      items_page(limit: 500) {
-        items { id name group { id } column_values { id value text } }
-      }
-    }
-  }`);
-  allItems = data.boards[0].items_page.items;
-
-  // Derive unique launch names from all items that have a Launch column value
+  const [launchData, shootData] = await Promise.all([
+    mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
+    mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`)
+  ]);
+  allItems = launchData.boards[0].items_page.items;
+  // Only show Retail shoots from the Requests group
+  allShoots = shootData.boards[0].items_page.items.filter(i =>
+    i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS
+  );
   const nameSet = new Set();
-  allItems.forEach(item => {
-    const l = getCol(item, COLS.LAUNCH);
-    if (l) nameSet.add(l);
-  });
+  allItems.forEach(item => { const l = getCol(item, COLS.LAUNCH); if (l) nameSet.add(l); });
   launches = Array.from(nameSet).sort();
 }
 
@@ -353,6 +372,14 @@ function filterState() {
   state.resources = items.filter(i => i.group.id === GROUPS.RESOURCES);
   state.products  = items.filter(i => i.group.id === GROUPS.PRODUCTS);
   state.notes     = items.filter(i => i.group.id === GROUPS.NOTES);
+  // Load linked shoot IDs stored in launch info item notes col (as JSON array)
+  if (state.launch) {
+    try {
+      const raw = getCol(state.launch, COLS.NOTES);
+      const parsed = JSON.parse(raw);
+      linkedShootIds = Array.isArray(parsed?.shootIds) ? parsed.shootIds : [];
+    } catch { linkedShootIds = []; }
+  } else { linkedShootIds = []; }
 }
 
 // ── SWITCH LAUNCH ──
@@ -406,8 +433,8 @@ function render() {
 
   if (!currentLaunch) {
     document.getElementById('hero-title').textContent = 'Launch Hub';
-    document.getElementById('hero-date').textContent = '—';
-    document.getElementById('hero-time').textContent = '—';
+    document.getElementById('hero-date').textContent = '-';
+    document.getElementById('hero-time').textContent = '-';
     document.getElementById('content').innerHTML = `
       <div class="welcome">
         <h2>No launches yet</h2>
@@ -422,42 +449,51 @@ function render() {
     const time = getCol(state.launch, COLS.LAUNCH_TIME);
     document.getElementById('hero-title').textContent = state.launch.name;
     document.getElementById('hero-date').textContent = formatDate(date);
-    document.getElementById('hero-time').textContent = time || '—';
-    document.title = state.launch.name + ' — Launch Hub | PAFC';
+    document.getElementById('hero-time').textContent = time || '-';
+    document.title = state.launch.name + ' - Launch Hub | PAFC';
   } else {
     document.getElementById('hero-title').textContent = currentLaunch;
     document.getElementById('hero-date').textContent = 'Set launch date';
-    document.getElementById('hero-time').textContent = '—';
+    document.getElementById('hero-time').textContent = '-';
   }
 
   document.getElementById('content').innerHTML =
-    renderTimeline() + renderResources() + renderProducts() + renderNotes();
+    renderTimeline() + renderShoots() + renderResources() + renderProducts() + renderNotes();
 }
 
 // ── RENDER SECTIONS ──
 function renderTimeline() {
   const items = state.timeline;
-  const byTime = {};
-  items.forEach(item => {
-    const t = getCol(item, COLS.LAUNCH_TIME) || 'Unscheduled';
-    if (!byTime[t]) byTime[t] = [];
-    byTime[t].push(item);
+
+  // Sort by date then time
+  const sorted = [...items].sort((a, b) => {
+    const dateA = getCol(a, COLS.TIMELINE_DATE) || '9999-99-99';
+    const dateB = getCol(b, COLS.TIMELINE_DATE) || '9999-99-99';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    const parseT = s => { const m = (s||'').match(/(\d+):(\d+)/); return m ? +m[1]*60 + +m[2] : 9999; };
+    return parseT(getCol(a, COLS.LAUNCH_TIME)) - parseT(getCol(b, COLS.LAUNCH_TIME));
   });
-  const times = Object.keys(byTime).sort((a,b) => {
-    const p = s => { const m = s.match(/(\d+):(\d+)/); return m ? +m[1]*60 + +m[2] : 9999; };
-    return p(a) - p(b);
+
+  // Group by date
+  const byDate = {};
+  sorted.forEach(item => {
+    const d = getCol(item, COLS.TIMELINE_DATE) || 'No date set';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(item);
   });
-  const blocksHTML = times.length ? times.map(t => `
+
+  const blocksHTML = Object.keys(byDate).length ? Object.entries(byDate).map(([date, dateItems]) => `
     <div class="time-block">
-      <div class="time-stamp">${t}</div>
+      <div class="time-stamp">${date !== 'No date set' ? formatDate(date) : 'No date set'}</div>
       <ul class="task-list">
-        ${byTime[t].map(item => {
+        ${dateItems.map(item => {
+          const time  = getCol(item, COLS.LAUNCH_TIME);
           const owner = getCol(item, COLS.OWNER);
           const note  = getCol(item, COLS.NOTES);
           const owners = owner ? owner.split('/').map(o => `<span class="owner-pill">${o.trim()}</span>`).join('') : '';
           return `<li class="task-item">
             <span class="task-dot"></span>
-            <span class="task-text">${item.name}${note ? `<span style="color:var(--text-light);font-size:11px"> — ${note}</span>` : ''}${owners}</span>
+            <span class="task-text">${time ? `<strong style="color:var(--teal-dim);margin-right:5px">${time}</strong>` : ''}${item.name}${note ? `<span style="color:var(--text-light);font-size:11px"> - ${note}</span>` : ''}${owners}</span>
             <div class="item-actions">
               <button class="btn-edit" onclick="editTimelineItem('${item.id}')">Edit</button>
               <button class="btn-delete" onclick="confirmDelete('${item.id}','timeline','${item.name.replace(/'/g,"\\'")}')">Delete</button>
@@ -466,14 +502,134 @@ function renderTimeline() {
         }).join('')}
       </ul>
     </div>`).join('')
-    : `<div class="empty-state">No timeline tasks yet — add your first task above</div>`;
+    : `<div class="empty-state">No timeline tasks yet - add your first task above</div>`;
+
   return `<div class="card">
     <div class="card-header"><span class="card-icon">🕐</span><span class="card-title">Launch Timeline</span><button class="card-add-btn" onclick="addTimelineItem()">+ Add Task</button></div>
     <div class="card-body"><div class="timeline">${blocksHTML}</div></div>
   </div>`;
 }
 
-function renderResources() {
+function renderShoots() {
+  const linked = allShoots.filter(s => linkedShootIds.includes(s.id));
+  const sorted = [...linked].sort((a,b) => {
+    const da = getShootCol(a, SCOLS.DATE) || '9999';
+    const db = getShootCol(b, SCOLS.DATE) || '9999';
+    return da.localeCompare(db);
+  });
+
+  function statusClass(s) {
+    if (!s) return '';
+    const sl = s.toLowerCase();
+    if (sl.includes('confirm')) return 'confirmed';
+    if (sl.includes('plan') || sl.includes('approv')) return 'planned';
+    return 'pending';
+  }
+
+  const shootsHTML = sorted.length ? sorted.map(shoot => {
+    const date     = getShootCol(shoot, SCOLS.DATE);
+    const players  = getShootCol(shoot, SCOLS.PLAYERS);
+    const location = getShootCol(shoot, SCOLS.LOCATION);
+    const status   = getShootCol(shoot, SCOLS.STATUS);
+    const d = date ? new Date(date + 'T00:00:00') : null;
+    return `<div class="shoot-item">
+      ${d ? `<div class="shoot-date-block">
+        <div class="shoot-date-day">${d.getDate()}</div>
+        <div class="shoot-date-month">${d.toLocaleDateString('en-AU',{month:'short'})}</div>
+      </div>` : ''}
+      <div class="shoot-details">
+        <div class="shoot-name">${shoot.name}</div>
+        <div class="shoot-meta">
+          ${players  ? `<span>👤 ${players}</span>` : ''}
+          ${location ? `<span>📍 ${location}</span>` : ''}
+          ${d ? `<span>📅 ${d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</span>` : ''}
+        </div>
+      </div>
+      <div class="shoot-status">
+        ${status ? `<span class="status-pill ${statusClass(status)}">${status}</span>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <a href="https://pafc-team.monday.com/boards/${SHOOT_BOARD_ID}" target="_blank" class="shoot-link">View in Monday ↗</a>
+        <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif" onclick="unlinkShoot('${shoot.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-state">No shoots linked yet - add a shoot from the ASA/CBA Hub above</div>`;
+
+  return `<div class="card">
+    <div class="card-header">
+      <span class="card-icon">📸</span>
+      <span class="card-title">Photoshoots</span>
+      <button class="card-add-btn" onclick="openShootPicker()">+ Link Shoot</button>
+    </div>
+    <div class="card-body">
+      <div class="shoot-list">${shootsHTML}</div>
+      <p style="font-size:10px;color:var(--text-light);margin-top:10px;text-align:right">Shoot details are managed in the <a href="https://pafc-team.monday.com/boards/${SHOOT_BOARD_ID}" target="_blank" style="color:var(--teal)">ASA/CBA Hub</a> - any updates there will reflect here automatically.</p>
+    </div>
+  </div>`;
+}
+
+function getShootCol(item, colId) {
+  const col = item.column_values?.find(c => c.id === colId);
+  if (!col || !col.value || col.value === 'null') return '';
+  try {
+    const p = JSON.parse(col.value);
+    if (p === null) return '';
+    if (colId === SCOLS.DATE) return p.date || '';
+    if (colId === SCOLS.NOTES) return p.text || '';
+    if (colId === SCOLS.STATUS) return p.label || col.text || '';
+    return col.text || '';
+  } catch { return col.text || ''; }
+}
+
+function openShootPicker() {
+  const available = allShoots.filter(s => !linkedShootIds.includes(s.id));
+  const optionsHTML = available.length
+    ? available.map(s => {
+        const date = getShootCol(s, SCOLS.DATE);
+        const players = getShootCol(s, SCOLS.PLAYERS);
+        const d = date ? new Date(date + 'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : 'No date';
+        return `<option value="${s.id}">${s.name} - ${d}${players ? ' (' + players + ')' : ''}</option>`;
+      }).join('')
+    : `<option value="" disabled>No shoots available to link</option>`;
+
+  openModal('Link a Shoot',
+    `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Select a shoot from the ASA/CBA Hub to link to this launch. Shoot details are read-only here and managed in the hub.</p>
+     <div class="form-group">
+       <label class="form-label">Select Shoot</label>
+       <select class="form-select" id="f-shoot-id">${optionsHTML}</select>
+     </div>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="linkShoot()" ${!available.length ? 'disabled' : ''}>Link Shoot</button>`);
+}
+
+async function linkShoot() {
+  const id = document.getElementById('f-shoot-id').value;
+  if (!id) return;
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Linking...';
+  try {
+    linkedShootIds = [...linkedShootIds, id];
+    await saveShootIds();
+    render(); closeModal(); toast('Shoot linked', 'success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Link Shoot'; }
+}
+
+async function unlinkShoot(id) {
+  linkedShootIds = linkedShootIds.filter(i => i !== id);
+  try {
+    await saveShootIds();
+    render(); toast('Shoot removed','success');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function saveShootIds() {
+  // Store linked shoot IDs in the launch info item's notes column as JSON
+  if (!state.launch) return;
+  const payload = JSON.stringify({ shootIds: linkedShootIds });
+  await updateItem(state.launch.id, { [COLS.NOTES]: payload });
+  // Update local
+  const cv = state.launch.column_values?.find(c => c.id === COLS.NOTES);
+  if (cv) cv.value = JSON.stringify({ text: payload });
+}
   const items = state.resources;
   const websiteItems = items.filter(i => (getCol(i, COLS.URL)||'').includes('portstore'));
   const otherItems   = items.filter(i => !(getCol(i, COLS.URL)||'').includes('portstore'));
@@ -497,7 +653,7 @@ function renderResources() {
     <div class="card-body">
       ${websiteItems.length ? `<div class="resource-group"><div class="resource-group-title">Website Links <span class="not-live-badge">⚠ Not live yet</span></div><ul class="link-list">${websiteItems.map(row).join('')}</ul></div>` : ''}
       ${otherItems.length   ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${otherItems.map(row).join('')}</ul></div>` : ''}
-      ${!items.length ? `<div class="empty-state">No resources yet — add your first link above</div>` : ''}
+      ${!items.length ? `<div class="empty-state">No resources yet - add your first link above</div>` : ''}
     </div>
   </div>`;
 }
@@ -520,7 +676,7 @@ function renderProducts() {
         ${url ? `<button class="product-copy-btn" onclick="copyLink(this,'${url}')">Copy Product Link</button>` : `<span style="color:var(--text-light);font-size:11px">No URL set</span>`}
       </div>
     </div>`;
-  }).join('') : `<div class="empty-state">No products yet — add your first product above</div>`;
+  }).join('') : `<div class="empty-state">No products yet - add your first product above</div>`;
   return `<div class="card">
     <div class="card-header"><span class="card-icon">👕</span><span class="card-title">Full Product Assortment</span><button class="card-add-btn" onclick="addProductItem()">+ Add Product</button></div>
     <div class="card-body"><div class="product-grid">${cardsHTML}</div></div>
@@ -535,13 +691,13 @@ function renderNotes() {
     const isInfo = sev === 'Working on it';
     return `<li class="note-item${isInfo ? ' info' : ''}">
       <span class="note-icon">${isInfo ? 'ℹ️' : '⚠️'}</span>
-      <span class="note-text"><strong>${item.name}</strong>${note ? ` — ${note}` : ''}</span>
+      <span class="note-text"><strong>${item.name}</strong>${note ? ` - ${note}` : ''}</span>
       <div class="item-actions" style="margin-left:auto">
         <button class="btn-edit" onclick="editNoteItem('${item.id}')">Edit</button>
         <button class="btn-delete" onclick="confirmDelete('${item.id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </li>`;
-  }).join('') : `<div class="empty-state">No notes yet — add important notes above</div>`;
+  }).join('') : `<div class="empty-state">No notes yet - add important notes above</div>`;
   return `<div class="card">
     <div class="card-header"><span class="card-icon">⚠️</span><span class="card-title">Important Notes</span><button class="card-add-btn" onclick="addNoteItem()">+ Add Note</button></div>
     <div class="card-body"><ul class="note-list">${html}</ul></div>
@@ -618,6 +774,7 @@ async function saveItem(id, section, groupId, name, colVals) {
 function tlForm(item) {
   return `
     <div class="form-group"><label class="form-label">Task Name</label><input class="form-input" id="f-tl-n" value="${item?.name||''}" placeholder="e.g. Social roll out begins"></div>
+    <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="f-tl-d" type="date" value="${item ? getCol(item,COLS.TIMELINE_DATE) : ''}"></div>
     <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="f-tl-t" value="${item ? getCol(item,COLS.LAUNCH_TIME) : ''}" placeholder="e.g. 10:15am"></div>
     <div class="form-group"><label class="form-label">Owner(s)</label><input class="form-input" id="f-tl-o" value="${item ? getCol(item,COLS.OWNER) : ''}" placeholder="e.g. Samboy / Is (support)"></div>
     <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-tl-note" placeholder="Optional detail">${item ? getCol(item,COLS.NOTES) : ''}</textarea></div>`;
@@ -626,10 +783,16 @@ function addTimelineItem() { openModal('Add Timeline Task', tlForm(null), `<butt
 function editTimelineItem(id) { const item = state.timeline.find(i=>i.id===id); openModal('Edit Timeline Task', tlForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','timeline','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTimelineItem('${id}')">Save</button>`); }
 async function saveTimelineItem(id) {
   const name = document.getElementById('f-tl-n').value.trim();
+  const date = document.getElementById('f-tl-d').value;
   if (!name) { alert('Task name required'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    await saveItem(id,'timeline',GROUPS.TIMELINE, name, { [COLS.LAUNCH_TIME]: document.getElementById('f-tl-t').value.trim(), [COLS.OWNER]: document.getElementById('f-tl-o').value.trim(), [COLS.NOTES]: document.getElementById('f-tl-note').value.trim() });
+    await saveItem(id,'timeline',GROUPS.TIMELINE, name, {
+      [COLS.TIMELINE_DATE]: date ? { date } : null,
+      [COLS.LAUNCH_TIME]: document.getElementById('f-tl-t').value.trim(),
+      [COLS.OWNER]: document.getElementById('f-tl-o').value.trim(),
+      [COLS.NOTES]: document.getElementById('f-tl-note').value.trim()
+    });
     render(); closeModal(); toast(id?'Task updated':'Task added','success');
   } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
 }
@@ -719,10 +882,18 @@ async function doDelete(id, section) {
 async function init() {
   try {
     await loadAll();
-    currentLaunch = launches[launches.length - 1] || null; // default to most recent
+    currentLaunch = launches[launches.length - 1] || null;
     populateSelector();
     if (currentLaunch) filterState();
     render();
+    // Refresh shoots every 60s so changes in ASA hub reflect automatically
+    setInterval(async () => {
+      try {
+        const shootData = await mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`);
+        allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
+        render();
+      } catch {}
+    }, 60000);
   } catch(e) {
     document.getElementById('content').innerHTML = `<div style="background:var(--red-pale);border:1px solid #fecaca;border-radius:12px;padding:20px;text-align:center;color:var(--red)"><strong>Could not load from Monday.com</strong><br><span style="font-size:12px;opacity:.8">${e.message}</span></div>`;
   }
