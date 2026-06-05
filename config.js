@@ -16,7 +16,8 @@ const LAUNCH_HUB_CONFIG = {
     TIMELINE:    "topics",
     RESOURCES:   "group_mm02ffen",
     PRODUCTS:    "group_mm02y11a",
-    NOTES:       "group_mm40wwdj"
+    NOTES:       "group_mm40wwdj",
+    TASKS:       "group_mm41vv96"
   },
   COLUMNS: {
     NAME:            "name",
@@ -28,6 +29,11 @@ const LAUNCH_HUB_CONFIG = {
     NOTES:           "long_text_mm405hdn",
     URL:             "link_mm40t1br",
     BIGCOMMERCE_URL: "link_mm40z35t",
-    SEVERITY:        "color_mm403mv0"
+    SEVERITY:        "color_mm403mv0",
+    TASK_STATUS:     "color_mm41skbm",
+    TASK_AREA:       "dropdown_mm41a0hx",
+    TASK_DUE:        "date_mm41ampt",
+    TASK_ASSIGNEE:   "multiple_person_mm41b66x",
+    TASK_DETAILS:    "long_text_mm418b1f"
   }
 };
