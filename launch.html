@@ -311,11 +311,14 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
         <button class="view-toggle-btn" id="toggle-dept" onclick="setTaskView('dept')">🏷️ By Department</button>
       </div>
       <button class="manage-dept-btn" onclick="manageDepartments()">⚙️ Departments</button>
-      <button class="add-task-btn" onclick="addTaskItem()">+ Add Task</button>
+      <button class="add-task-btn" id="add-task-btn" onclick="addTaskItem()">+ Add Task</button>
     </div>
   </div>
   <div class="filter-bar">
     <span class="filter-label">Filter by</span>
+    <select class="filter-select" id="filter-launch" onchange="renderTasks()" style="display:none">
+      <option value="">All Launches</option>
+    </select>
     <select class="filter-select" id="filter-status" onchange="renderTasks()">
       <option value="">All Statuses</option>
       <option value="Assigned">Assigned</option>
@@ -388,7 +391,8 @@ let departments = [];      // live from Config group
 let currentLaunch = null;
 let linkedShootIds = [];
 let currentTab = 'hub';
-let taskViewMode = 'date'; // 'date' or 'dept'
+let taskViewMode = 'date';
+let isMyTasksMode = false; // true when accessed from home My Tasks button
 let state = { launch: null, timeline: [], resources: [], products: [], notes: [], tasks: [] };
 
 // PAFC users list (pre-loaded for performance)
@@ -1170,8 +1174,9 @@ function updateAssigneeLabel() {
 }
 
 // ── TAB SWITCHING ──
-function switchTab(tab) {
+function switchTab(tab, myTasksMode) {
   currentTab = tab;
+  if (myTasksMode !== undefined) isMyTasksMode = myTasksMode;
   document.getElementById('tab-hub').classList.toggle('active', tab === 'hub');
   document.getElementById('tab-tasks').classList.toggle('active', tab === 'tasks');
   const hubPage = document.querySelector('.page:not(#tasks-view)');
@@ -1179,9 +1184,22 @@ function switchTab(tab) {
   if (tab === 'hub') {
     hubPage.style.display = '';
     tasksPage.style.display = 'none';
+    isMyTasksMode = false;
   } else {
     hubPage.style.display = 'none';
     tasksPage.style.display = '';
+    // My Tasks mode: show launch filter, update title, hide Add Task
+    const launchFilter = document.getElementById('filter-launch');
+    const addBtn = document.getElementById('add-task-btn');
+    if (isMyTasksMode) {
+      document.getElementById('tasks-title').textContent = 'My Tasks';
+      launchFilter.style.display = '';
+      if (addBtn) addBtn.style.display = 'none';
+    } else {
+      document.getElementById('tasks-title').textContent = `Tasks - ${currentLaunch || ''}`;
+      launchFilter.style.display = 'none';
+      if (addBtn) addBtn.style.display = '';
+    }
     renderTasks();
   }
 }
@@ -1255,6 +1273,13 @@ function formatDueDate(dateStr) {
 }
 
 function populateFilters() {
+  // Launch filter — only shown in My Tasks mode
+  const launchSel = document.getElementById('filter-launch');
+  if (launchSel && isMyTasksMode) {
+    const currentLaunchFilter = launchSel.value;
+    launchSel.innerHTML = '<option value="">All Launches</option>' +
+      launches.map(l => `<option value="${l}" ${l === currentLaunchFilter ? 'selected' : ''}>${l}</option>`).join('');
+  }
   // Dept filter from live departments
   const deptSel = document.getElementById('filter-dept');
   if (deptSel) {
@@ -1262,10 +1287,13 @@ function populateFilters() {
     deptSel.innerHTML = '<option value="">All Departments</option>' +
       departments.map(d => `<option value="${d.name}" ${d.name === currentDept ? 'selected' : ''}>${d.name}</option>`).join('');
   }
-  // Assignee filter
+  // Assignee filter — show all users with tasks in current context
   const sel = document.getElementById('filter-assignee');
   if (!sel) return;
-  const usedIds = new Set(state.tasks.flatMap(t => getTaskAssigneeIds(t)));
+  const taskPool = isMyTasksMode
+    ? allItems.filter(i => i.group.id === GROUPS.TASKS && getCol(i, COLS.LAUNCH) !== LAUNCH_HUB_CONFIG.CONFIG_TAG)
+    : state.tasks;
+  const usedIds = new Set(taskPool.flatMap(t => getTaskAssigneeIds(t)));
   const current = sel.value;
   sel.innerHTML = '<option value="">All Assignees</option>' +
     PAFC_USERS.filter(u => usedIds.has(u.id)).map(u => `<option value="${u.id}" ${u.id === current ? 'selected' : ''}>${u.name}</option>`).join('');
@@ -1273,25 +1301,43 @@ function populateFilters() {
 
 // ── RENDER TASKS ──
 function renderTasks() {
-  if (!currentLaunch) {
-    document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>No launch selected</h3><p>Select or create a launch first</p></div>`;
-    return;
+  // In My Tasks mode, pull tasks from ALL launches
+  // In normal mode, pull from current launch only
+  let taskPool;
+  if (isMyTasksMode) {
+    taskPool = allItems.filter(i =>
+      i.group.id === GROUPS.TASKS &&
+      getCol(i, COLS.LAUNCH) !== LAUNCH_HUB_CONFIG.CONFIG_TAG &&
+      getCol(i, COLS.LAUNCH) !== ''
+    );
+    if (!taskPool.length) {
+      document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>No tasks found</h3><p>Tasks assigned to you across all launches will appear here</p></div>`;
+      return;
+    }
+  } else {
+    if (!currentLaunch) {
+      document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>No launch selected</h3><p>Select or create a launch first</p></div>`;
+      return;
+    }
+    taskPool = state.tasks;
+    document.getElementById('tasks-title').textContent = `Tasks - ${currentLaunch}`;
   }
 
-  document.getElementById('tasks-title').textContent = `Tasks - ${currentLaunch}`;
   populateFilters();
 
   const filterStatus   = document.getElementById('filter-status')?.value || '';
   const filterDept     = document.getElementById('filter-dept')?.value || '';
   const filterAssignee = document.getElementById('filter-assignee')?.value || '';
+  const filterLaunch   = document.getElementById('filter-launch')?.value || '';
 
-  let tasks = [...state.tasks];
+  let tasks = [...taskPool];
   if (filterStatus)   tasks = tasks.filter(t => getTaskStatus(t) === filterStatus);
   if (filterDept)     tasks = tasks.filter(t => getCol(t, COLS.TASK_DEPT) === filterDept);
   if (filterAssignee) tasks = tasks.filter(t => getTaskAssigneeIds(t).includes(filterAssignee));
+  if (filterLaunch)   tasks = tasks.filter(t => getCol(t, COLS.LAUNCH) === filterLaunch);
 
   if (!tasks.length) {
-    const hasFilters = filterStatus || filterDept || filterAssignee;
+    const hasFilters = filterStatus || filterDept || filterAssignee || filterLaunch;
     document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>${hasFilters ? 'No tasks match your filters' : 'No tasks yet'}</h3><p>${hasFilters ? 'Try clearing your filters' : 'Add your first task using the button above'}</p></div>`;
     return;
   }
@@ -1303,7 +1349,6 @@ function renderTasks() {
   let html = '';
 
   if (taskViewMode === 'date') {
-    // Group by due date
     const byDate = {};
     incomplete.forEach(t => {
       const d = getCol(t, COLS.TASK_DUE) || 'No due date';
@@ -1313,10 +1358,9 @@ function renderTasks() {
     const dateKeys = Object.keys(byDate).sort((a,b) => a === 'No due date' ? 1 : b === 'No due date' ? -1 : a.localeCompare(b));
     dateKeys.forEach(d => {
       const label = d === 'No due date' ? 'No due date' : new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-      html += `<div class="dept-section"><div class="dept-header">📅 ${label} <span class="dept-count">${byDate[d].length}</span></div><div class="tasks-list">${byDate[d].map(taskCardHTML).join('')}</div></div>`;
+      html += `<div class="dept-section"><div class="dept-header">📅 ${label} <span class="dept-count">${byDate[d].length}</span></div><div class="tasks-list">${byDate[d].map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
     });
   } else {
-    // Group by department
     const byDept = {};
     incomplete.forEach(t => {
       const d = getCol(t, COLS.TASK_DEPT) || 'No Department';
@@ -1327,29 +1371,27 @@ function renderTasks() {
     const allDeptKeys = [...deptOrder.filter(d => byDept[d]), ...Object.keys(byDept).filter(d => !deptOrder.includes(d))];
     allDeptKeys.forEach(d => {
       if (!byDept[d]) return;
-      html += `<div class="dept-section"><div class="dept-header">🏷️ ${d} <span class="dept-count">${byDept[d].length}</span></div><div class="tasks-list">${byDept[d].map(taskCardHTML).join('')}</div></div>`;
+      html += `<div class="dept-section"><div class="dept-header">🏷️ ${d} <span class="dept-count">${byDept[d].length}</span></div><div class="tasks-list">${byDept[d].map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
     });
   }
 
   if (completed.length) {
-    html += `<div class="dept-section"><div class="dept-header" style="color:var(--green)">✓ Completed <span class="dept-count">${completed.length}</span></div><div class="tasks-list">${completed.map(taskCardHTML).join('')}</div></div>`;
+    html += `<div class="dept-section"><div class="dept-header" style="color:var(--green)">✓ Completed <span class="dept-count">${completed.length}</span></div><div class="tasks-list">${completed.map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
   }
 
   document.getElementById('tasks-content').innerHTML = html || `<div class="tasks-empty"><h3>No tasks yet</h3><p>Add your first task using the button above</p></div>`;
 }
 
-function taskCardHTML(task) {
-  const status   = getTaskStatus(task);
-  const area     = getCol(task, COLS.TASK_DEPT);
-  const due      = getCol(task, COLS.TASK_DUE);
-  const details  = getCol(task, COLS.TASK_DETAILS);
+function taskCardHTML(task, showLaunch) {
+  const status      = getTaskStatus(task);
+  const area        = getCol(task, COLS.TASK_DEPT);
+  const due         = getCol(task, COLS.TASK_DUE);
+  const details     = getCol(task, COLS.TASK_DETAILS);
+  const launch      = getCol(task, COLS.LAUNCH);
   const assigneeIds = getTaskAssigneeIds(task);
-  const assignees = assigneeIds.map(id => getUserById(id)).filter(Boolean);
+  const assignees   = assigneeIds.map(id => getUserById(id)).filter(Boolean);
 
-  const statusIcon = status === 'Completed' ? '✓' : status === 'In Progress' ? '●' : '';
-  const statusCls  = status === 'Completed' ? 'completed' : status === 'In Progress' ? 'in-progress' : '';
-  const nextStatus = status === 'Assigned' ? 'In Progress' : status === 'In Progress' ? 'Completed' : 'Assigned';
-  const nextLabel  = `Click to mark ${nextStatus}`;
+  const statusCls = status === 'Completed' ? 'completed' : status === 'In Progress' ? 'in-progress' : 'assigned';
 
   const dueInfo = due ? formatDueDate(due) : null;
   const completedDate = getCol(task, COLS.TASK_COMPLETED);
@@ -1363,22 +1405,25 @@ function taskCardHTML(task) {
 
   const detailsHTML = details ? `<div class="task-details-text">${details.replace(/https?:\/\/[^\s]+/g, url => `<a href="${url}" target="_blank">${url}</a>`)}</div>` : '';
 
+  const launchTag = showLaunch && launch ? `<span style="font-size:10px;font-weight:600;color:var(--text-light);background:#f0f2f5;padding:2px 8px;border-radius:20px;white-space:nowrap">⚡ ${launch}</span>` : '';
+
   return `<div class="task-card ${status === 'Completed' ? 'completed' : ''}">
     <div class="task-card-body">
       <div class="task-card-top">
         <span class="task-card-name">${task.name}</span>
         ${area ? `<span class="dept-pill ${getDeptClass(area)}">${area}</span>` : ''}
+        ${launchTag}
       </div>
       <div class="task-card-meta">
         <div class="status-pill-wrap">
-          <select class="status-select status-select--${statusCls||'assigned'}" onchange="handleStatusChange('${task.id}', this.value)" onclick="event.stopPropagation()">
+          <select class="status-select status-select--${statusCls}" onchange="handleStatusChange('${task.id}', this.value)" onclick="event.stopPropagation()">
             <option value="Assigned" ${status==='Assigned'?'selected':''}>Assigned</option>
             <option value="In Progress" ${status==='In Progress'?'selected':''}>In Progress</option>
             <option value="Completed" ${status==='Completed'?'selected':''}>Completed</option>
           </select>
         </div>
-        ${dueInfo ? `<span class="task-due ${dueInfo.cls}">📅 ${dueInfo.text}</span>` : ''}
-        ${completedDateStr ? `<span class="completed-date">✓ Completed ${completedDateStr}</span>` : ''}
+        ${dueInfo ? `<span class="task-due ${dueInfo.cls}">&#128197; ${dueInfo.text}</span>` : ''}
+        ${completedDateStr ? `<span class="completed-date">&#10003; Completed ${completedDateStr}</span>` : ''}
         ${assigneeHTML}
       </div>
       ${detailsHTML}
@@ -1647,6 +1692,8 @@ function clearFilters() {
   document.getElementById('filter-status').value = '';
   document.getElementById('filter-dept').value = '';
   document.getElementById('filter-assignee').value = '';
+  const launchF = document.getElementById('filter-launch');
+  if (launchF) launchF.value = '';
   renderTasks();
 }
 
@@ -1672,17 +1719,18 @@ async function init() {
 
     // If deep-linked to tasks tab (e.g. from My Tasks on home screen)
     if (tabParam === 'tasks') {
-      currentTab = 'tasks';
       const userParam = params.get('user');
       const resolvedUserId = userParam || currentUserId;
-      if (resolvedUserId) {
+      const fromHome = !!tabParam; // always true here, but check if user param present = My Tasks mode
+      const myTasksMode = !!userParam; // My Tasks mode when user param is in URL
+      currentTab = 'tasks';
+      switchTab('tasks', myTasksMode);
+      if (resolvedUserId && myTasksMode) {
         setTimeout(() => {
           const sel = document.getElementById('filter-assignee');
-          if (sel) { sel.value = resolvedUserId; }
-          renderTasks();
+          if (sel) { sel.value = resolvedUserId; renderTasks(); }
         }, 100);
       }
-      switchTab('tasks');
     }
 
     render();
