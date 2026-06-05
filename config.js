@@ -15,8 +15,8 @@ const LAUNCH_HUB_CONFIG = {
   },
   VIDEO_BOARD_ID: "2349351235",
   VIDEO_BOARD_URL: "https://pafc-team.monday.com/boards/2349351235",
-  VIDEO_GROUP: "duplicate_of_w_c__10_jan31520",
-  VIDEO_DEPT_FILTER: ["Retail", "Media Marketing", "Marketing"],
+  VIDEO_GROUP: null,
+  VIDEO_DEPT_FILTER: ["Retail", "Media & Marketing", "Media Marketing", "Marketing"],
   VIDEO_COLS: {
     OWNER:        "people",
     CAPTURE_DATE: "date59",
