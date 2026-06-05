@@ -37,6 +37,7 @@ const LAUNCH_HUB_CONFIG = {
     TASK_DUE:         "date_mm41ampt",
     TASK_ASSIGNEE:    "multiple_person_mm41b66x",
     TASK_DETAILS:     "long_text_mm418b1f",
-    TASK_COMPLETED:   "date_mm41wvp4"
+    TASK_COMPLETED:   "date_mm41wvp4",
+    PRODUCT_IMAGE:    "long_text_mm41tk4s"
   }
 };
