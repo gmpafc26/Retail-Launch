@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch Hub | Port Adelaide FC</title>
+<script src="https://cdn.jsdelivr.net/npm/monday-sdk-js/dist/main.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#1a1f2e;--navy-mid:#232838;--teal:#0abfbf;--teal-dim:#088a8a;--teal-pale:#e6f9f9;--white:#fff;--body-bg:#f0f2f5;--card-bg:#fff;--border:#e2e6ed;--text:#1a1f2e;--text-mid:#4a5568;--text-light:#8a94a6;--amber:#f59e0b;--amber-pale:#fffbeb;--amber-border:#fde68a;--green:#10b981;--red:#ef4444;--red-pale:#fef2f2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.5}
+
+.back-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s;font-family:'Inter',sans-serif}
+.back-btn:hover{background:rgba(255,255,255,.2)}
+/* TOPBAR */
+.topbar{background:var(--navy);padding:0 24px;display:flex;align-items:center;gap:12px;height:56px;box-shadow:0 2px 8px rgba(0,0,0,.25);position:sticky;top:0;z-index:50}
+.topbar-icon{width:32px;height:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:700;color:#fff;white-space:nowrap}
+.topbar-divider{width:1px;height:20px;background:rgba(255,255,255,.15);margin:0 4px;flex-shrink:0}
+.topbar-sub{font-size:12px;color:rgba(255,255,255,.5);white-space:nowrap}
+.topbar-spacer{flex:1}
+
+/* LAUNCH SWITCHER in topbar */
+.launch-switcher{display:flex;align-items:center;gap:8px}
+.launch-select-wrap{position:relative}
+.launch-select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:5px 28px 5px 10px;border-radius:8px;cursor:pointer;appearance:none;outline:none;min-width:160px}
+.launch-select option{background:var(--navy);color:#fff}
+.launch-select-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:rgba(255,255,255,.6);font-size:10px}
+.new-launch-btn{background:var(--teal);color:var(--navy);border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .12s}
+.new-launch-btn:hover{background:#08aaaa}
+
+/* PAGE */
+.page{max-width:960px;margin:0 auto;padding:24px 20px 60px}
+
+/* HERO */
+.page-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;background:var(--navy);border-radius:14px;padding:24px 28px;margin-bottom:20px;flex-wrap:wrap}
+.hero-left{display:flex;flex-direction:column;gap:4px}
+
+/* SHOOT CARD */
+.shoot-list{display:flex;flex-direction:column;gap:8px}
+.shoot-item{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:#fafbfc;align-items:flex-start}
+.shoot-date-block{flex-shrink:0;background:var(--navy);color:#fff;border-radius:8px;padding:6px 10px;text-align:center;min-width:52px}
+.shoot-date-day{font-size:18px;font-weight:800;line-height:1}
+.shoot-date-month{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-top:2px}
+.shoot-details{flex:1}
+.shoot-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.shoot-meta{font-size:11px;color:var(--text-light);display:flex;flex-wrap:wrap;gap:8px}
+.shoot-meta span{display:flex;align-items:center;gap:3px}
+.shoot-status{flex-shrink:0}
+.status-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;background:#f0f2f5;color:var(--text-mid)}
+.status-pill.confirmed{background:#ecfdf5;color:#065f46}
+.status-pill.planned{background:#eff6ff;color:#1e40af}
+.status-pill.pending{background:var(--amber-pale);color:#92670a}
+.shoot-link{font-size:10px;color:var(--teal);text-decoration:none;font-weight:600;flex-shrink:0;align-self:center}
+.shoot-link:hover{text-decoration:underline}
+.page-title{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.1}
+.title-sub{font-size:14px;font-weight:500;color:rgba(255,255,255,.45);display:block;margin-top:3px}
+.page-hero-date{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.hero-date-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+.hero-date-main{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1}
+.hero-time{display:flex;align-items:center;gap:7px;font-size:18px;font-weight:700;color:var(--teal);margin-top:2px}
+.dot{width:8px;height:8px;background:var(--teal);border-radius:50%;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+.hero-edit-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s;flex-shrink:0;align-self:flex-start}
+.hero-edit-btn:hover{background:rgba(255,255,255,.2)}
+
+/* CARDS */
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.card-header{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.card-icon{font-size:15px}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mid);flex:1}
+.card-add-btn{background:var(--teal);color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
+.card-add-btn:hover{background:var(--teal-dim)}
+.card-body{padding:16px 18px}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column}
+.time-block{position:relative;padding-left:28px;padding-bottom:20px}
+.time-block:last-child{padding-bottom:0}
+.time-block::before{content:'';position:absolute;left:9px;top:26px;bottom:0;width:2px;background:var(--border)}
+.time-block:last-child::before{display:none}
+.time-block::after{content:'';position:absolute;left:4px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 0 0 2px var(--teal)}
+.time-stamp{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.task-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.task-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;border:1px solid transparent;transition:border-color .12s,background .12s}
+.task-item:hover{background:#f8f9fb;border-color:var(--border)}
+.task-item:hover .item-actions{opacity:1}
+.task-dot{flex-shrink:0;width:6px;height:6px;margin-top:5px;border-radius:50%;background:var(--teal)}
+.task-text{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+.owner-pill{display:inline-flex;align-items:center;background:var(--teal-pale);color:var(--teal-dim);font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;margin-left:5px;white-space:nowrap;vertical-align:middle}
+
+/* ITEM ACTIONS */
+.item-actions{display:flex;gap:4px;margin-left:auto;flex-shrink:0;opacity:0;transition:opacity .12s}
+.btn-edit{background:var(--teal-pale);color:var(--teal-dim);border:1px solid #b2e8e8;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-edit:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.btn-delete{background:#fef2f2;color:var(--red);border:1px solid #fecaca;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-delete:hover{background:var(--red);color:#fff}
+
+/* RESOURCES */
+.resource-group{margin-bottom:16px}
+.resource-group:last-child{margin-bottom:0}
+.resource-group-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-light);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.not-live-badge{font-size:9px;font-weight:600;text-transform:none;letter-spacing:0;background:var(--amber-pale);color:#92670a;border:1px solid var(--amber-border);padding:1px 7px;border-radius:20px}
+.link-list{list-style:none;display:flex;flex-direction:column;gap:4px}
+.link-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:#fafbfc;transition:border-color .12s}
+.link-item:hover{border-color:var(--teal)}
+.link-item:hover .item-actions{opacity:1}
+.link-icon{flex-shrink:0;width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;background:#edf0f5}
+.link-icon.sp{background:#e8f0fe}.link-icon.ht{background:#fff0e8}.link-icon.ps{background:#e8f9f9}.link-icon.doc{background:#e8f0fe}
+.link-label-text{flex:1;font-size:12.5px;font-weight:500;color:var(--text)}
+.view-pill{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:var(--teal-pale);color:var(--teal-dim);border:1px solid #b2e8e8;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;text-decoration:none;transition:background .12s}
+.view-pill:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.copy-btn{flex-shrink:0;background:var(--teal);border:none;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
+.copy-btn:hover{background:var(--teal-dim)}
+.copy-btn.copied{background:var(--green)}
+
+/* PRODUCTS */
+.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.product-card{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fafbfc;display:flex;flex-direction:column;position:relative}
+.product-card:hover .product-card-actions{opacity:1}
+.product-card-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .12s}
+.product-img-wrap{aspect-ratio:1/1;overflow:hidden;background:#edf0f5}
+.product-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.product-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;background:#f0f2f5;aspect-ratio:1/1}
+.product-info{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.product-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
+.product-copy-btn{width:100%;font-size:11px;font-weight:600;color:#fff;padding:6px 10px;border:none;border-radius:20px;background:var(--teal);cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
+.product-copy-btn:hover{background:var(--teal-dim)}
+.product-copy-btn.copied{background:var(--green)}
+
+/* NOTES */
+.note-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.note-item{display:flex;gap:10px;padding:10px 14px;background:var(--amber-pale);border:1px solid var(--amber-border);border-left:3px solid var(--amber);border-radius:8px;font-size:13px;line-height:1.5;position:relative}
+.note-item:hover .item-actions{opacity:1}
+.note-item.info{background:var(--teal-pale);border-color:#b2e8e8;border-left-color:var(--teal)}
+.note-icon{flex-shrink:0;font-size:14px;margin-top:1px}
+.note-text{flex:1}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:24px;color:var(--text-light);font-size:12px;border:1.5px dashed var(--border);border-radius:8px}
+
+/* WELCOME SCREEN */
+.welcome{text-align:center;padding:60px 20px}
+.welcome h2{font-size:22px;font-weight:800;color:var(--navy);margin-bottom:12px}
+.welcome p{color:var(--text-mid);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto}
+.welcome-btn{background:var(--teal);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
+.welcome-btn:hover{background:var(--teal-dim)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-light)}
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block}
+.form-input,.form-textarea,.form-select{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color .12s}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--teal)}
+.form-textarea{resize:vertical;min-height:80px}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+.btn-primary{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s}
+.btn-primary:hover{background:var(--teal-dim)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:#f0f2f5;color:var(--text-mid);border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-danger{background:var(--red-pale);color:var(--red);border:1px solid #fecaca;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-right:auto}
+.btn-danger:hover{background:var(--red);color:#fff}
+
+/* TOAST */
+.saving-toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:600;z-index:300;opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
+.saving-toast.show{opacity:1;transform:translateY(0)}
+.saving-toast.success{background:var(--green)}
+.saving-toast.error{background:var(--red)}
+
+/* LOADING */
+.loading-state{text-align:center;padding:60px 20px;color:var(--text-light)}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* FOOTER */
+.page-footer{max-width:960px;margin:0 auto;padding:0 20px 32px;text-align:center;font-size:11px;color:var(--text-light)}
+.monday-badge{display:inline-flex;align-items:center;gap:5px;margin-top:4px}
+.monday-dot{width:6px;height:6px;background:#6161ff;border-radius:50%}
+
+.task-item.shoot-entry{background:#f0f9f9;border:1px solid #b2e8e8}
+.task-item.shoot-entry:hover{background:#e6f9f9;border-color:var(--teal)}
+.shoot-dot{flex-shrink:0;width:18px;height:18px;margin-top:0;border-radius:50%;background:var(--teal-pale);border:1.5px solid var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px}
+.shoot-tag{display:inline-flex;align-items:center;background:var(--teal);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:6px;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}.page-hero{flex-direction:column;align-items:flex-start}.page-hero-date{text-align:left;align-items:flex-start}.launch-select{min-width:120px}}
+
+/* TAB BAR */
+.tab-bar{background:#fff;border-bottom:1px solid var(--border);display:flex;padding:0 24px}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:12px 18px;font-size:13px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:'Inter',sans-serif;transition:color .12s,border-color .12s;margin-bottom:-1px;display:flex;align-items:center;gap:6px}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+/* TASKS */
+.tasks-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.tasks-title{font-size:18px;font-weight:800;color:var(--navy);flex:1}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:10px}
+.filter-label{font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.filter-select{padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);background:#fff;outline:none;cursor:pointer;transition:border-color .12s}
+.filter-select:focus{border-color:var(--teal)}
+.filter-spacer{flex:1}
+.filter-clear{background:none;border:none;font-size:11px;color:var(--text-light);cursor:pointer;font-family:'Inter',sans-serif;text-decoration:underline;padding:0}
+.filter-clear:hover{color:var(--text)}
+.add-task-btn{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .12s}
+.add-task-btn:hover{background:var(--teal-dim)}
+.tasks-list{display:flex;flex-direction:column;gap:8px}
+.task-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color .12s,box-shadow .12s}
+.task-card:hover{border-color:var(--teal);box-shadow:0 2px 8px rgba(10,191,191,.08)}
+.task-card:hover .item-actions{opacity:1}
+.task-card.completed{opacity:.6}
+.task-card.completed .task-card-name{text-decoration:line-through;color:var(--text-light)}
+.task-status-btn{flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid #cbd5e0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;margin-top:1px}
+.task-status-btn.in-progress{border-color:var(--amber);background:var(--amber-pale)}
+.task-status-btn.completed{border-color:var(--green);background:var(--green-pale)}
+.task-card-body{flex:1;min-width:0}
+.task-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.task-card-name{font-size:13px;font-weight:600;color:var(--text)}
+.area-pill{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.area-pill.ecommerce{background:#ede9fe;color:#5b21b6}
+.area-pill.logistics{background:#fef3c7;color:#92400e}
+.area-pill.data-entry{background:#e0f2fe;color:#075985}
+.area-pill.marketing{background:#fce7f3;color:#9d174d}
+.area-pill.custom{background:#f0fdf4;color:#166534}
+.area-pill.default{background:#f0f2f5;color:var(--text-mid)}
+.task-card-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text-light);margin-top:4px}
+.task-due.overdue{color:var(--red);font-weight:600}
+.task-due.today{color:var(--amber);font-weight:600}
+.task-details-text{font-size:11.5px;color:var(--text-mid);margin-top:6px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.assignee-wrap{display:flex;align-items:center;gap:5px}
+.assignee-avatar{width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid #fff;box-shadow:0 0 0 1px var(--border)}
+.task-count{font-size:10px;font-weight:700;background:var(--teal);color:#fff;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;display:inline-block}
+.tasks-empty{text-align:center;padding:40px 20px;color:var(--text-light);border:1.5px dashed var(--border);border-radius:10px;background:#fff}
+.tasks-empty h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.section-divider{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goHome()" title="Back to Home">←</button>
+  <div class="topbar-icon">⚡</div>
+  <span class="topbar-title">Launch Hub</span>
+  <div class="topbar-divider"></div>
+  <span class="topbar-sub">Port Adelaide FC</span>
+  <div class="topbar-spacer"></div>
+  <div class="launch-switcher">
+    <div class="launch-select-wrap">
+      <select class="launch-select" id="launch-select" onchange="switchLaunch(this.value)">
+        <option value="">Loading...</option>
+      </select>
+      <span class="launch-select-arrow">▾</span>
+    </div>
+    <button class="new-launch-btn" onclick="createNewLaunch()">+ New Launch</button>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-hub" onclick="switchTab('hub')">📋 Launch Hub</button>
+  <button class="tab-btn" id="tab-tasks" onclick="switchTab('tasks')">🗂️ Tasks</button>
+</div>
+
+<div class="page">
+  <div class="page-hero" id="hero">
+    <div class="hero-left">
+      <h1 class="page-title" id="hero-title">Launch Hub</h1>
+      <span class="title-sub">Port Adelaide FC - Retail</span>
+    </div>
+    <div class="page-hero-date">
+      <div class="hero-date-label">Launch</div>
+      <div class="hero-date-main" id="hero-date">-</div>
+      <div class="hero-time"><span class="dot"></span><span id="hero-time">-</span></div>
+    </div>
+    <button class="hero-edit-btn" id="hero-edit-btn" onclick="openHeroEdit()" style="display:none">✏️ Edit</button>
+  </div>
+  <div id="content">
+    <div class="loading-state"><div class="loading-spinner"></div><div>Loading launches...</div></div>
+  </div>
+</div>
+
+<!-- TASKS VIEW -->
+<div class="page" id="tasks-view" style="display:none">
+  <div class="tasks-header">
+    <span class="tasks-title" id="tasks-title">Tasks</span>
+    <button class="add-task-btn" onclick="addTaskItem()">+ Add Task</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Filter by</span>
+    <select class="filter-select" id="filter-status" onchange="renderTasks()">
+      <option value="">All Statuses</option>
+      <option value="Assigned">Assigned</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
+    <select class="filter-select" id="filter-area" onchange="renderTasks()">
+      <option value="">All Areas</option>
+      <option value="Ecommerce">Ecommerce</option>
+      <option value="Logistics">Logistics</option>
+      <option value="Data Entry">Data Entry</option>
+      <option value="Marketing">Marketing</option>
+      <option value="Custom">Custom</option>
+    </select>
+    <select class="filter-select" id="filter-assignee" onchange="renderTasks()">
+      <option value="">All Assignees</option>
+    </select>
+    <div class="filter-spacer"></div>
+    <button class="filter-clear" onclick="clearFilters()">Clear filters</button>
+  </div>
+  <div id="tasks-content">
+    <div class="loading-state"><div class="loading-spinner"></div><div>Loading tasks...</div></div>
+  </div>
+</div>
+
+<div class="page-footer">
+  Port Adelaide Football Club · Retail &amp; Merchandise
+  <div class="monday-badge"><span class="monday-dot"></span> Powered by Monday.com</div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<div class="saving-toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+// ── MONDAY SDK ──
+const mondaySDK = window.monday || null;
+let currentUserId = null;
+
+async function initSDK() {
+  if (!mondaySDK) return;
+  try {
+    mondaySDK.setToken(LAUNCH_HUB_CONFIG.MONDAY_TOKEN);
+    const ctx = await mondaySDK.get('context');
+    currentUserId = String(ctx?.data?.user?.id || '');
+  } catch(e) { console.warn('SDK context unavailable:', e); }
+}
+
+function goHome() {
+  window.location.href = 'index.html';
+}
+
+const API = 'https://api.monday.com/v2';
+const TOKEN = LAUNCH_HUB_CONFIG.MONDAY_TOKEN;
+const BOARD_ID = LAUNCH_HUB_CONFIG.BOARD_ID;
+const SHOOT_BOARD_ID = LAUNCH_HUB_CONFIG.SHOOT_BOARD_ID;
+const GROUPS = LAUNCH_HUB_CONFIG.GROUPS;
+const COLS = LAUNCH_HUB_CONFIG.COLUMNS;
+const SCOLS = LAUNCH_HUB_CONFIG.SHOOT_COLS;
+
+// ── STATE ──
+let allItems = [];
+let allShoots = [];
+let allUsers = [];         // Monday workspace users
+let launches = [];
+let currentLaunch = null;
+let linkedShootIds = [];
+let currentTab = 'hub';
+let state = { launch: null, timeline: [], resources: [], products: [], notes: [], tasks: [] };
+
+// PAFC users list (pre-loaded for performance)
+const PAFC_USERS = [{"id":"2901057","name":"Jessica Green","photo":"https://files.monday.com/use1/photos/2901057/thumb/2901057-dapulse_other_blue.png?1519086995"},{"id":"8478619","name":"Matt Sampson","photo":"https://files.monday.com/use1/photos/8478619/thumb/8478619-data?1557815299"},{"id":"10287870","name":"Stephen Shirley","photo":"https://files.monday.com/use1/photos/10287870/thumb/10287870-Stephen_Shirley_photo_2019_09_03_07_35_25.png?1567496125"},{"id":"27582813","name":"Isabel Gawel","photo":"https://files.monday.com/use1/photos/27582813/thumb/27582813-user_photo_initials_2022_01_31_23_09_17.png?1643670557"},{"id":"27582816","name":"Rachel McLean","photo":"https://files.monday.com/use1/photos/27582816/thumb/27582816-user_photo_initials_2022_01_31_23_18_05.png?1643671085"},{"id":"29892421","name":"Andrew Fuss","photo":"https://files.monday.com/use1/photos/29892421/thumb/29892421-user_photo_initials_2022_04_22_01_04_59.png?1650589499"},{"id":"31301927","name":"Brooke Bowering","photo":"https://files.monday.com/use1/photos/31301927/thumb/31301927-user_photo_initials_2022_06_14_00_13_46.png?1655165626"},{"id":"32045423","name":"Leonie Way","photo":"https://files.monday.com/use1/photos/32045423/thumb/32045423-user_photo_initials_2022_07_13_05_43_40.png?1657691020"},{"id":"32077695","name":"William Bell","photo":"https://files.monday.com/use1/photos/32077695/thumb/32077695-user_photo_2025_03_03_23_09_11.png?1741043352"},{"id":"33515454","name":"Mercedes Clarson","photo":"https://files.monday.com/use1/photos/33515454/thumb/33515454-user_photo_2023_04_04_06_30_42.png?1680589842"},{"id":"33551309","name":"Ruby McHaffie","photo":"https://files.monday.com/use1/photos/33551309/thumb/33551309-user_photo_2023_04_18_05_41_20.png?1681796480"},{"id":"35080765","name":"Steve Frank","photo":"https://files.monday.com/use1/photos/35080765/thumb/35080765-user_photo_initials_2022_09_27_06_29_54.png?1664260194"},{"id":"44397410","name":"Simon Buckley","photo":"https://files.monday.com/use1/photos/44397410/thumb/44397410-user_photo_initials_2023_06_13_04_53_20.png?1686632000"},{"id":"46104905","name":"Mike Hawkins","photo":"https://files.monday.com/use1/photos/46104905/thumb/46104905-user_photo_initials_2023_07_25_06_31_13.png?1690266673"},{"id":"51529663","name":"Ashlea Lyall","photo":"https://files.monday.com/use1/photos/51529663/thumb/51529663-user_photo_initials_2023_11_08_05_08_37.png?1699420117"},{"id":"55171426","name":"Lara Etchells","photo":"https://files.monday.com/use1/photos/55171426/thumb/55171426-user_photo_initials_2024_01_29_23_35_06.png?1706571306"},{"id":"60359997","name":"Christine Glenn","photo":"https://files.monday.com/use1/photos/60359997/thumb/60359997-user_photo_2024_09_25_02_29_42.png?1727231383"},{"id":"64638124","name":"Ben Teakle","photo":"https://files.monday.com/use1/photos/64638124/thumb/64638124-user_photo_initials_2024_08_12_04_58_48.png?1723438728"},{"id":"67726578","name":"Braedon Talbot","photo":"https://files.monday.com/use1/photos/67726578/thumb/67726578-user_photo_initials_2024_10_23_22_55_16.png?1729724116"},{"id":"70447452","name":"Eliza Montgomery","photo":"https://files.monday.com/use1/photos/70447452/thumb/70447452-user_photo_initials_2025_01_08_04_51_57.png?1736311917"},{"id":"72983431","name":"Emma Piscioneri","photo":"https://files.monday.com/use1/photos/72983431/thumb/72983431-user_photo_initials_2025_03_05_00_58_03.png?1741136283"},{"id":"76089974","name":"Jasmin Scuteri-Young","photo":"https://files.monday.com/use1/photos/76089974/thumb/76089974-user_photo_initials_2025_05_15_07_32_38.png?1747294358"},{"id":"82646896","name":"Georgie Morris","photo":"https://files.monday.com/use1/photos/82646896/thumb/82646896-user_photo_initials_2025_09_09_04_39_35.png?1757392775"},{"id":"88538862","name":"Ebony Noack","photo":"https://files.monday.com/use1/photos/88538862/thumb/88538862-user_photo_initials_2025_09_24_06_20_43.png?1758694843"},{"id":"95075727","name":"Alyssa Cullinan","photo":"https://files.monday.com/use1/photos/95075727/thumb/95075727-user_photo_initials_2025_10_28_02_06_02.png?1761617162"},{"id":"102504343","name":"Ali Davidson","photo":"https://files.monday.com/use1/photos/102504343/thumb/102504343-user_photo_initials_2026_04_21_02_05_17.png?1776737117"},{"id":"102823072","name":"Tessa Briscoe","photo":"https://files.monday.com/use1/photos/102823072/thumb/102823072-user_photo_initials_2026_04_28_02_56_09.png?1777344969"},{"id":"103515282","name":"Bryan Melville","photo":"https://files.monday.com/use1/photos/103515282/thumb/103515282-user_photo_initials_2026_05_12_04_58_28.png?1778561908"}];
+
+// ── API ──
+async function mondayQuery(query) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN, 'API-Version': '2024-01' },
+    body: JSON.stringify({ query })
+  });
+  const d = await res.json();
+  if (d.errors) throw new Error(d.errors[0].message);
+  return d.data;
+}
+
+async function createItem(groupId, name, colVals) {
+  const vals = JSON.stringify(JSON.stringify(colVals));
+  const q = `mutation { create_item(board_id: ${BOARD_ID}, group_id: "${groupId}", item_name: ${JSON.stringify(name)}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
+  return (await mondayQuery(q)).create_item;
+}
+
+async function updateItem(itemId, colVals) {
+  const vals = JSON.stringify(JSON.stringify(colVals));
+  const q = `mutation { change_multiple_column_values(board_id: ${BOARD_ID}, item_id: ${itemId}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
+  return (await mondayQuery(q)).change_multiple_column_values;
+}
+
+async function updateName(itemId, name) {
+  await mondayQuery(`mutation { change_item_name(board_id: ${BOARD_ID}, item_id: ${itemId}, value: ${JSON.stringify(name)}) { id } }`);
+}
+
+async function deleteItem(itemId) {
+  await mondayQuery(`mutation { delete_item(item_id: ${itemId}) { id } }`);
+}
+
+// ── HELPERS ──
+function getCol(item, colId) {
+  const col = item.column_values?.find(c => c.id === colId);
+  if (!col || !col.value || col.value === 'null') return '';
+  try {
+    const p = JSON.parse(col.value);
+    if (p === null) return '';
+    if (colId === COLS.URL || colId === COLS.BIGCOMMERCE_URL) return p.url || '';
+    if (colId === COLS.NOTES) return p.text || '';
+    if (colId === COLS.LAUNCH_DATE) return p.date || '';
+    if (colId === COLS.SEVERITY) return p.label || col.text || '';
+    return col.text || '';
+  } catch { return col.text || ''; }
+}
+
+function formatDate(d) {
+  if (!d) return '-';
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function getLinkIcon(url) {
+  if (!url) return { cls: '', emoji: '🔗' };
+  if (url.includes('sharepoint')) return { cls: 'sp', emoji: '📁' };
+  if (url.includes('hightail'))   return { cls: 'ht', emoji: '📷' };
+  if (url.includes('portstore'))  return { cls: 'ps', emoji: '🏬' };
+  if (url.includes('.docx') || url.includes('docs')) return { cls: 'doc', emoji: '📄' };
+  return { cls: '', emoji: '🔗' };
+}
+
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'saving-toast show' + (type ? ' ' + type : '');
+  setTimeout(() => { t.className = 'saving-toast'; }, 2500);
+}
+
+function copyLink(btn, url) {
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── MODAL ──
+function openModal(title, body, actions) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-actions').innerHTML = actions;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOnOverlay(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+// ── LOAD ALL DATA ──
+async function loadAll() {
+  const [launchData, shootData] = await Promise.all([
+    mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
+    mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`)
+  ]);
+  allItems = launchData.boards[0].items_page.items;
+  // Only show Retail shoots from the Requests group
+  allShoots = shootData.boards[0].items_page.items.filter(i =>
+    i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS
+  );
+  const nameSet = new Set();
+  allItems.forEach(item => { const l = getCol(item, COLS.LAUNCH); if (l) nameSet.add(l); });
+  launches = Array.from(nameSet).sort();
+}
+
+// ── POPULATE SELECTOR ──
+function populateSelector() {
+  const sel = document.getElementById('launch-select');
+  sel.innerHTML = launches.length
+    ? launches.map(l => `<option value="${l}"${l === currentLaunch ? ' selected' : ''}>${l}</option>`).join('')
+    : `<option value="">No launches yet</option>`;
+}
+
+// ── FILTER STATE FOR CURRENT LAUNCH ──
+function filterState() {
+  const items = allItems.filter(i => getCol(i, COLS.LAUNCH) === currentLaunch);
+  state.launch    = items.find(i => i.group.id === GROUPS.LAUNCH_INFO) || null;
+  state.timeline  = items.filter(i => i.group.id === GROUPS.TIMELINE);
+  state.resources = items.filter(i => i.group.id === GROUPS.RESOURCES);
+  state.products  = items.filter(i => i.group.id === GROUPS.PRODUCTS);
+  state.notes     = items.filter(i => i.group.id === GROUPS.NOTES);
+  state.tasks     = items.filter(i => i.group.id === GROUPS.TASKS);
+  if (state.launch) {
+    try {
+      const raw = getCol(state.launch, COLS.NOTES);
+      const parsed = JSON.parse(raw);
+      linkedShootIds = Array.isArray(parsed?.shootIds) ? parsed.shootIds : [];
+    } catch { linkedShootIds = []; }
+  } else { linkedShootIds = []; }
+}
+
+// ── SWITCH LAUNCH ──
+function switchLaunch(name) {
+  currentLaunch = name;
+  filterState();
+  render();
+}
+
+// ── CREATE NEW LAUNCH ──
+function createNewLaunch() {
+  openModal('Create New Launch',
+    `<div class="form-group"><label class="form-label">Launch Name</label><input class="form-input" id="f-new-launch" placeholder="e.g. SDNR 2026" autofocus></div>
+     <div class="form-group"><label class="form-label">Launch Date</label><input class="form-input" id="f-new-date" type="date"></div>
+     <div class="form-group"><label class="form-label">Launch Time</label><input class="form-input" id="f-new-time" placeholder="e.g. 10:00am"></div>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="saveNewLaunch()">Create Launch</button>`);
+  setTimeout(() => document.getElementById('f-new-launch')?.focus(), 50);
+}
+
+async function saveNewLaunch() {
+  const name = document.getElementById('f-new-launch').value.trim();
+  const date = document.getElementById('f-new-date').value;
+  const time = document.getElementById('f-new-time').value.trim();
+  if (!name) { alert('Launch name is required'); return; }
+  if (launches.includes(name)) { alert('A launch with this name already exists'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  try {
+    const colVals = {
+      [COLS.LAUNCH]: name,
+      [COLS.LAUNCH_DATE]: date ? { date } : null,
+      [COLS.LAUNCH_TIME]: time
+    };
+    const created = await createItem(GROUPS.LAUNCH_INFO, name, colVals);
+    allItems.push(created);
+    launches.push(name);
+    launches.sort();
+    currentLaunch = name;
+    filterState();
+    populateSelector();
+    render();
+    closeModal();
+    toast('Launch created!', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Create Launch'; }
+}
+
+// ── RENDER ──
+function render() {
+  document.getElementById('hero-edit-btn').style.display = currentLaunch ? '' : 'none';
+
+  // Update task tab badge
+  const taskCount = state.tasks.filter(t => getTaskStatus(t) !== 'Completed').length;
+  document.getElementById('tab-tasks').innerHTML = `🗂️ Tasks${taskCount ? ` <span class="task-count">${taskCount}</span>` : ''}`;
+
+  // If on tasks tab, just re-render tasks
+  if (currentTab === 'tasks') { renderTasks(); return; }
+
+  if (!currentLaunch) {
+    document.getElementById('hero-title').textContent = 'Launch Hub';
+    document.getElementById('hero-date').textContent = '-';
+    document.getElementById('hero-time').textContent = '-';
+    document.getElementById('content').innerHTML = `
+      <div class="welcome">
+        <h2>No launches yet</h2>
+        <p>Create your first launch to get started. You can add the timeline, resources, products and notes from here.</p>
+        <button class="welcome-btn" onclick="createNewLaunch()">+ Create First Launch</button>
+      </div>`;
+    return;
+  }
+
+  if (state.launch) {
+    const date = getCol(state.launch, COLS.LAUNCH_DATE);
+    const time = getCol(state.launch, COLS.LAUNCH_TIME);
+    document.getElementById('hero-title').textContent = state.launch.name;
+    document.getElementById('hero-date').textContent = formatDate(date);
+    document.getElementById('hero-time').textContent = time || '-';
+    document.title = state.launch.name + ' - Launch Hub | PAFC';
+  } else {
+    document.getElementById('hero-title').textContent = currentLaunch;
+    document.getElementById('hero-date').textContent = 'Set launch date';
+    document.getElementById('hero-time').textContent = '-';
+  }
+
+  document.getElementById('content').innerHTML =
+    renderTimeline() + renderShoots() + renderResources() + renderProducts() + renderNotes();
+}
+
+// ── RENDER SECTIONS ──
+function renderTimeline() {
+  const items = state.timeline;
+
+  // Build combined list: regular tasks + shoot entries
+  const linkedShoots = allShoots.filter(s => linkedShootIds.includes(s.id));
+  const shootEntries = linkedShoots.map(s => ({
+    _isShoot: true,
+    id: s.id,
+    name: s.name,
+    _date: getShootCol(s, SCOLS.DATE) || '',
+    _players: getShootCol(s, SCOLS.PLAYERS) || '',
+    _location: getShootCol(s, SCOLS.LOCATION) || '',
+    _status: getShootCol(s, SCOLS.STATUS) || ''
+  }));
+
+  // Sort regular tasks by date then time
+  const sortedTasks = [...items].sort((a, b) => {
+    const dateA = getCol(a, COLS.TIMELINE_DATE) || '9999-99-99';
+    const dateB = getCol(b, COLS.TIMELINE_DATE) || '9999-99-99';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    const parseT = s => { const m = (s||'').match(/(\d+):(\d+)/); return m ? +m[1]*60 + +m[2] : 9999; };
+    return parseT(getCol(a, COLS.LAUNCH_TIME)) - parseT(getCol(b, COLS.LAUNCH_TIME));
+  });
+
+  // Merge shoots into the sorted list grouped by date
+  const byDate = {};
+  sortedTasks.forEach(item => {
+    const d = getCol(item, COLS.TIMELINE_DATE) || 'No date set';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push({ ...item, _isShoot: false });
+  });
+  shootEntries.forEach(shoot => {
+    const d = shoot._date || 'No date set';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(shoot);
+  });
+
+  // Sort date keys chronologically
+  const sortedDates = Object.keys(byDate).sort((a, b) => {
+    if (a === 'No date set') return 1;
+    if (b === 'No date set') return -1;
+    return a.localeCompare(b);
+  });
+
+  const blocksHTML = sortedDates.length ? sortedDates.map(date => `
+    <div class="time-block">
+      <div class="time-stamp">${date !== 'No date set' ? formatDate(date) : 'No date set'}</div>
+      <ul class="task-list">
+        ${byDate[date].map(item => {
+          if (item._isShoot) {
+            const meta = [item._players, item._location].filter(Boolean).join(' - ');
+            return `<li class="task-item shoot-entry">
+              <span class="shoot-dot">📸</span>
+              <span class="task-text">
+                <strong>${item.name}</strong>
+                <span class="shoot-tag">Shoot</span>
+                ${meta ? `<span style="color:var(--text-mid);font-size:11px;display:block;margin-top:2px">${meta}</span>` : ''}
+              </span>
+              <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" style="color:var(--teal);font-size:10px;font-weight:600;text-decoration:none;flex-shrink:0;align-self:center">View ↗</a>
+            </li>`;
+          }
+          const time  = getCol(item, COLS.LAUNCH_TIME);
+          const owner = getCol(item, COLS.OWNER);
+          const note  = getCol(item, COLS.NOTES);
+          const owners = owner ? owner.split('/').map(o => `<span class="owner-pill">${o.trim()}</span>`).join('') : '';
+          return `<li class="task-item">
+            <span class="task-dot"></span>
+            <span class="task-text">${time ? `<strong style="color:var(--teal-dim);margin-right:5px">${time}</strong>` : ''}${item.name}${note ? `<span style="color:var(--text-light);font-size:11px"> - ${note}</span>` : ''}${owners}</span>
+            <div class="item-actions">
+              <button class="btn-edit" onclick="editTimelineItem('${item.id}')">Edit</button>
+              <button class="btn-delete" onclick="confirmDelete('${item.id}','timeline','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+            </div>
+          </li>`;
+        }).join('')}
+      </ul>
+    </div>`).join('')
+    : `<div class="empty-state">No timeline tasks yet - add your first task above</div>`;
+
+  return `<div class="card">
+    <div class="card-header"><span class="card-icon">🕐</span><span class="card-title">Launch Timeline</span><button class="card-add-btn" onclick="addTimelineItem()">+ Add Task</button></div>
+    <div class="card-body"><div class="timeline">${blocksHTML}</div></div>
+  </div>`;
+}
+
+function renderShoots() {
+  const linked = allShoots.filter(s => linkedShootIds.includes(s.id));
+  const sorted = [...linked].sort((a,b) => {
+    const da = getShootCol(a, SCOLS.DATE) || '9999';
+    const db = getShootCol(b, SCOLS.DATE) || '9999';
+    return da.localeCompare(db);
+  });
+
+  function statusClass(s) {
+    if (!s) return '';
+    const sl = s.toLowerCase();
+    if (sl.includes('confirm')) return 'confirmed';
+    if (sl.includes('plan') || sl.includes('approv')) return 'planned';
+    return 'pending';
+  }
+
+  const shootsHTML = sorted.length ? sorted.map(shoot => {
+    const date     = getShootCol(shoot, SCOLS.DATE);
+    const players  = getShootCol(shoot, SCOLS.PLAYERS);
+    const location = getShootCol(shoot, SCOLS.LOCATION);
+    const status   = getShootCol(shoot, SCOLS.STATUS);
+    const d = date ? new Date(date + 'T00:00:00') : null;
+    return `<div class="shoot-item">
+      ${d ? `<div class="shoot-date-block">
+        <div class="shoot-date-day">${d.getDate()}</div>
+        <div class="shoot-date-month">${d.toLocaleDateString('en-AU',{month:'short'})}</div>
+      </div>` : ''}
+      <div class="shoot-details">
+        <div class="shoot-name">${shoot.name}</div>
+        <div class="shoot-meta">
+          ${players  ? `<span>👤 ${players}</span>` : ''}
+          ${location ? `<span>📍 ${location}</span>` : ''}
+          ${d ? `<span>📅 ${d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</span>` : ''}
+        </div>
+      </div>
+      <div class="shoot-status">
+        ${status ? `<span class="status-pill ${statusClass(status)}">${status}</span>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" class="shoot-link">View in ASA Hub ↗</a>
+        <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif" onclick="unlinkShoot('${shoot.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-state">No shoots linked yet - add a shoot from the ASA/CBA Hub above</div>`;
+
+  return `<div class="card">
+    <div class="card-header">
+      <span class="card-icon">📸</span>
+      <span class="card-title">Photoshoots</span>
+      <button class="card-add-btn" onclick="openShootPicker()">+ Link Shoot</button>
+    </div>
+    <div class="card-body">
+      <div class="shoot-list">${shootsHTML}</div>
+      <p style="font-size:11px;color:var(--text-light);margin-top:10px;text-align:right">To view or edit shoot details, visit the <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" style="color:var(--teal);font-weight:600">ASA Hub ↗</a></p>
+    </div>
+  </div>`;
+}
+
+function getShootCol(item, colId) {
+  const col = item.column_values?.find(c => c.id === colId);
+  if (!col || !col.value || col.value === 'null') return '';
+  try {
+    const p = JSON.parse(col.value);
+    if (p === null) return '';
+    if (colId === SCOLS.DATE) return p.date || '';
+    if (colId === SCOLS.NOTES) return p.text || '';
+    if (colId === SCOLS.STATUS) return p.label || col.text || '';
+    return col.text || '';
+  } catch { return col.text || ''; }
+}
+
+function openShootPicker() {
+  const available = allShoots.filter(s => !linkedShootIds.includes(s.id));
+  const optionsHTML = available.length
+    ? available.map(s => {
+        const date = getShootCol(s, SCOLS.DATE);
+        const players = getShootCol(s, SCOLS.PLAYERS);
+        const d = date ? new Date(date + 'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : 'No date';
+        return `<option value="${s.id}">${s.name} - ${d}${players ? ' (' + players + ')' : ''}</option>`;
+      }).join('')
+    : `<option value="" disabled>No shoots available to link</option>`;
+
+  openModal('Link a Shoot',
+    `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Select a shoot from the ASA/CBA Hub to link to this launch. Shoot details are read-only here and managed in the hub.</p>
+     <div class="form-group">
+       <label class="form-label">Select Shoot</label>
+       <select class="form-select" id="f-shoot-id">${optionsHTML}</select>
+     </div>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="linkShoot()" ${!available.length ? 'disabled' : ''}>Link Shoot</button>`);
+}
+
+async function linkShoot() {
+  const id = document.getElementById('f-shoot-id').value;
+  if (!id) return;
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Linking...';
+  try {
+    linkedShootIds = [...linkedShootIds, id];
+    await saveShootIds();
+    render(); closeModal(); toast('Shoot linked', 'success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Link Shoot'; }
+}
+
+async function unlinkShoot(id) {
+  linkedShootIds = linkedShootIds.filter(i => i !== id);
+  try {
+    await saveShootIds();
+    render(); toast('Shoot removed','success');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function saveShootIds() {
+  // Store linked shoot IDs in the launch info item's notes column as JSON
+  if (!state.launch) return;
+  const payload = JSON.stringify({ shootIds: linkedShootIds });
+  await updateItem(state.launch.id, { [COLS.NOTES]: payload });
+  // Update local
+  const cv = state.launch.column_values?.find(c => c.id === COLS.NOTES);
+  if (cv) cv.value = JSON.stringify({ text: payload });
+}
+
+function renderResources() {
+  const items = state.resources;
+  const websiteItems = items.filter(i => (getCol(i, COLS.URL)||'').includes('portstore'));
+  const otherItems   = items.filter(i => !(getCol(i, COLS.URL)||'').includes('portstore'));
+  function row(item) {
+    const url = getCol(item, COLS.URL);
+    const icon = getLinkIcon(url);
+    const isPS = url && url.includes('portstore');
+    return `<li class="link-item">
+      <span class="link-icon ${icon.cls}">${icon.emoji}</span>
+      <span class="link-label-text">${item.name}</span>
+      ${url && isPS  ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
+      ${url && !isPS ? `<a href="${url}" target="_blank" class="view-pill">View ↗</a>` : ''}
+      <div class="item-actions">
+        <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('${item.id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </li>`;
+  }
+  return `<div class="card">
+    <div class="card-header"><span class="card-icon">🔗</span><span class="card-title">Resources</span><button class="card-add-btn" onclick="addResourceItem()">+ Add Link</button></div>
+    <div class="card-body">
+      ${websiteItems.length ? `<div class="resource-group"><div class="resource-group-title">Website Links <span class="not-live-badge">⚠ Not live yet</span></div><ul class="link-list">${websiteItems.map(row).join('')}</ul></div>` : ''}
+      ${otherItems.length   ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${otherItems.map(row).join('')}</ul></div>` : ''}
+      ${!items.length ? `<div class="empty-state">No resources yet - add your first link above</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderProducts() {
+  const items = state.products;
+  const cardsHTML = items.length ? items.map(item => {
+    const url = getCol(item, COLS.BIGCOMMERCE_URL);
+    const img = getCol(item, COLS.URL);
+    return `<div class="product-card">
+      <div class="product-card-actions">
+        <button class="btn-edit" onclick="editProductItem('${item.id}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('${item.id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+      <div class="product-img-wrap">
+        ${img ? `<img src="${img}" alt="${item.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'product-img-placeholder\\'>👕</div>'">` : `<div class="product-img-placeholder">👕</div>`}
+      </div>
+      <div class="product-info">
+        <div class="product-name">${item.name}</div>
+        ${url ? `<button class="product-copy-btn" onclick="copyLink(this,'${url}')">Copy Product Link</button>` : `<span style="color:var(--text-light);font-size:11px">No URL set</span>`}
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-state">No products yet - add your first product above</div>`;
+  return `<div class="card">
+    <div class="card-header"><span class="card-icon">👕</span><span class="card-title">Full Product Assortment</span><button class="card-add-btn" onclick="addProductItem()">+ Add Product</button></div>
+    <div class="card-body"><div class="product-grid">${cardsHTML}</div></div>
+  </div>`;
+}
+
+function renderNotes() {
+  const items = state.notes;
+  const html = items.length ? items.map(item => {
+    const note = getCol(item, COLS.NOTES);
+    const sev  = getCol(item, COLS.SEVERITY);
+    const isInfo = sev === 'Working on it';
+    return `<li class="note-item${isInfo ? ' info' : ''}">
+      <span class="note-icon">${isInfo ? 'ℹ️' : '⚠️'}</span>
+      <span class="note-text"><strong>${item.name}</strong>${note ? ` - ${note}` : ''}</span>
+      <div class="item-actions" style="margin-left:auto">
+        <button class="btn-edit" onclick="editNoteItem('${item.id}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('${item.id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </li>`;
+  }).join('') : `<div class="empty-state">No notes yet - add important notes above</div>`;
+  return `<div class="card">
+    <div class="card-header"><span class="card-icon">⚠️</span><span class="card-title">Important Notes</span><button class="card-add-btn" onclick="addNoteItem()">+ Add Note</button></div>
+    <div class="card-body"><ul class="note-list">${html}</ul></div>
+  </div>`;
+}
+
+// ── HERO EDIT ──
+function openHeroEdit() {
+  const l = state.launch;
+  const name = l ? l.name : currentLaunch;
+  const date = l ? getCol(l, COLS.LAUNCH_DATE) : '';
+  const time = l ? getCol(l, COLS.LAUNCH_TIME) : '';
+  openModal('Edit Launch Info',
+    `<div class="form-group"><label class="form-label">Launch Name</label><input class="form-input" id="f-ln" value="${name}" placeholder="e.g. Prison Bar 2026"></div>
+     <div class="form-group"><label class="form-label">Launch Date</label><input class="form-input" id="f-ld" type="date" value="${date}"></div>
+     <div class="form-group"><label class="form-label">Launch Time</label><input class="form-input" id="f-lt" value="${time}" placeholder="e.g. 10:00am"></div>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="saveHeroEdit()">Save</button>`);
+}
+
+async function saveHeroEdit() {
+  const name = document.getElementById('f-ln').value.trim();
+  const date = document.getElementById('f-ld').value;
+  const time = document.getElementById('f-lt').value.trim();
+  if (!name) { alert('Launch name is required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const colVals = { [COLS.LAUNCH]: name, [COLS.LAUNCH_DATE]: date ? { date } : null, [COLS.LAUNCH_TIME]: time };
+    if (state.launch) {
+      const updated = await updateItem(state.launch.id, colVals);
+      if (name !== state.launch.name) await updateName(state.launch.id, name);
+      // update allItems
+      const idx = allItems.findIndex(i => i.id === state.launch.id);
+      if (idx > -1) allItems[idx] = { ...allItems[idx], name, column_values: updated.column_values };
+    } else {
+      const created = await createItem(GROUPS.LAUNCH_INFO, name, colVals);
+      allItems.push(created);
+    }
+    // handle launch name change
+    if (name !== currentLaunch) {
+      // retag all items for this launch
+      const toRetag = allItems.filter(i => getCol(i, COLS.LAUNCH) === currentLaunch && i.group.id !== GROUPS.LAUNCH_INFO);
+      await Promise.all(toRetag.map(i => updateItem(i.id, { [COLS.LAUNCH]: name })));
+      toRetag.forEach(i => { const cv = i.column_values.find(c => c.id === COLS.LAUNCH); if(cv) cv.text = name; });
+      launches = launches.filter(l => l !== currentLaunch);
+      if (!launches.includes(name)) launches.push(name);
+      launches.sort();
+      currentLaunch = name;
+      populateSelector();
+    }
+    filterState(); render(); closeModal(); toast('Launch info saved', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
+}
+
+// ── SAVE HELPERS ──
+async function saveItem(id, section, groupId, name, colVals) {
+  const allCols = { ...colVals, [COLS.LAUNCH]: currentLaunch };
+  if (id) {
+    const updated = await updateItem(id, allCols);
+    const item = state[section].find(i => i.id === id);
+    if (name !== item.name) await updateName(id, name);
+    item.name = name; item.column_values = updated.column_values;
+    const gi = allItems.findIndex(i => i.id === id);
+    if (gi > -1) { allItems[gi].name = name; allItems[gi].column_values = updated.column_values; }
+  } else {
+    const created = await createItem(groupId, name, allCols);
+    state[section].push(created);
+    allItems.push(created);
+  }
+}
+
+// ── TIMELINE CRUD ──
+function tlForm(item) {
+  return `
+    <div class="form-group"><label class="form-label">Task Name</label><input class="form-input" id="f-tl-n" value="${item?.name||''}" placeholder="e.g. Social roll out begins"></div>
+    <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="f-tl-d" type="date" value="${item ? getCol(item,COLS.TIMELINE_DATE) : ''}"></div>
+    <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="f-tl-t" value="${item ? getCol(item,COLS.LAUNCH_TIME) : ''}" placeholder="e.g. 10:15am"></div>
+    <div class="form-group"><label class="form-label">Owner(s)</label><input class="form-input" id="f-tl-o" value="${item ? getCol(item,COLS.OWNER) : ''}" placeholder="e.g. Samboy / Is (support)"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-tl-note" placeholder="Optional detail">${item ? getCol(item,COLS.NOTES) : ''}</textarea></div>`;
+}
+function addTimelineItem() { openModal('Add Timeline Task', tlForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTimelineItem(null)">Add Task</button>`); }
+function editTimelineItem(id) { const item = state.timeline.find(i=>i.id===id); openModal('Edit Timeline Task', tlForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','timeline','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTimelineItem('${id}')">Save</button>`); }
+async function saveTimelineItem(id) {
+  const name = document.getElementById('f-tl-n').value.trim();
+  const date = document.getElementById('f-tl-d').value;
+  if (!name) { alert('Task name required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+    await saveItem(id,'timeline',GROUPS.TIMELINE, name, {
+      [COLS.TIMELINE_DATE]: date ? { date } : null,
+      [COLS.LAUNCH_TIME]: document.getElementById('f-tl-t').value.trim(),
+      [COLS.OWNER]: document.getElementById('f-tl-o').value.trim(),
+      [COLS.NOTES]: document.getElementById('f-tl-note').value.trim()
+    });
+    render(); closeModal(); toast(id?'Task updated':'Task added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
+}
+
+// ── RESOURCES CRUD ──
+function resForm(item) {
+  return `
+    <div class="form-group"><label class="form-label">Label</label><input class="form-input" id="f-res-n" value="${item?.name||''}" placeholder="e.g. Social Graphics"></div>
+    <div class="form-group"><label class="form-label">URL</label><input class="form-input" id="f-res-u" value="${item ? getCol(item,COLS.URL) : ''}" placeholder="https://..."></div>`;
+}
+function addResourceItem() { openModal('Add Resource', resForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem(null)">Add Link</button>`); }
+function editResourceItem(id) { const item = state.resources.find(i=>i.id===id); openModal('Edit Resource', resForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem('${id}')">Save</button>`); }
+async function saveResourceItem(id) {
+  const name = document.getElementById('f-res-n').value.trim();
+  const url  = document.getElementById('f-res-u').value.trim();
+  if (!name) { alert('Label required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+    await saveItem(id,'resources',GROUPS.RESOURCES, name, { [COLS.URL]: url ? {url,text:name} : null });
+    render(); closeModal(); toast(id?'Resource updated':'Resource added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
+}
+
+// ── PRODUCTS CRUD ──
+function prodForm(item) {
+  return `
+    <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="f-p-n" value="${item?.name||''}" placeholder="e.g. PA Macron 2026 Prison Bar Guernsey - Adult"></div>
+    <div class="form-group"><label class="form-label">Product URL (BigCommerce)</label><input class="form-input" id="f-p-u" value="${item ? getCol(item,COLS.BIGCOMMERCE_URL) : ''}" placeholder="https://portstore.com.au/..."></div>
+    <div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f-p-i" value="${item ? getCol(item,COLS.URL) : ''}" placeholder="https://cdn11.bigcommerce.com/..."><p style="font-size:11px;color:var(--text-light);margin-top:4px">Paste the direct image URL from BigCommerce CDN</p></div>`;
+}
+function addProductItem() { openModal('Add Product', prodForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`); }
+function editProductItem(id) { const item = state.products.find(i=>i.id===id); openModal('Edit Product', prodForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem('${id}')">Save</button>`); }
+async function saveProductItem(id) {
+  const name = document.getElementById('f-p-n').value.trim();
+  const url  = document.getElementById('f-p-u').value.trim();
+  const img  = document.getElementById('f-p-i').value.trim();
+  if (!name) { alert('Product name required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+    await saveItem(id,'products',GROUPS.PRODUCTS, name, { [COLS.BIGCOMMERCE_URL]: url?{url,text:name}:null, [COLS.URL]: img?{url:img,text:'Image'}:null });
+    render(); closeModal(); toast(id?'Product updated':'Product added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
+}
+
+// ── NOTES CRUD ──
+function noteForm(item) {
+  const sev = item ? getCol(item,COLS.SEVERITY) : 'Stuck';
+  return `
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="f-nt-n" value="${item?.name||''}" placeholder="e.g. No wool guernseys"></div>
+    <div class="form-group"><label class="form-label">Detail</label><textarea class="form-textarea" id="f-nt-t" placeholder="Additional detail...">${item ? getCol(item,COLS.NOTES) : ''}</textarea></div>
+    <div class="form-group"><label class="form-label">Type</label>
+      <select class="form-select" id="f-nt-s">
+        <option value="Stuck" ${sev==='Stuck'?'selected':''}>⚠️ Warning</option>
+        <option value="Working on it" ${sev==='Working on it'?'selected':''}>ℹ️ Info</option>
+      </select>
+    </div>`;
+}
+function addNoteItem() { openModal('Add Note', noteForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveNoteItem(null)">Add Note</button>`); }
+function editNoteItem(id) { const item = state.notes.find(i=>i.id===id); openModal('Edit Note', noteForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveNoteItem('${id}')">Save</button>`); }
+async function saveNoteItem(id) {
+  const name = document.getElementById('f-nt-n').value.trim();
+  if (!name) { alert('Title required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+    await saveItem(id,'notes',GROUPS.NOTES, name, { [COLS.NOTES]: document.getElementById('f-nt-t').value.trim(), [COLS.SEVERITY]: {label:document.getElementById('f-nt-s').value} });
+    render(); closeModal(); toast(id?'Note updated':'Note added','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
+}
+
+// ── DELETE ──
+function confirmDelete(id, section, name) {
+  openModal('Delete Item',
+    `<p style="color:var(--text-mid);line-height:1.6">Are you sure you want to delete <strong>${name}</strong>? This cannot be undone.</p>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-danger" style="margin-right:0" onclick="doDelete('${id}','${section}')">Delete</button>`);
+}
+async function doDelete(id, section) {
+  const btn = document.querySelector('#modal-actions .btn-danger'); btn.disabled=true; btn.textContent='Deleting...';
+  try {
+    await deleteItem(id);
+    state[section] = state[section].filter(i=>i.id!==id);
+    allItems = allItems.filter(i=>i.id!==id);
+    render(); closeModal(); toast('Deleted','success');
+  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Delete'; }
+}
+
+// ── TAB SWITCHING ──
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-hub').classList.toggle('active', tab === 'hub');
+  document.getElementById('tab-tasks').classList.toggle('active', tab === 'tasks');
+  const hubPage = document.querySelector('.page:not(#tasks-view)');
+  const tasksPage = document.getElementById('tasks-view');
+  if (tab === 'hub') {
+    hubPage.style.display = '';
+    tasksPage.style.display = 'none';
+  } else {
+    hubPage.style.display = 'none';
+    tasksPage.style.display = '';
+    renderTasks();
+  }
+}
+
+// ── TASKS HELPERS ──
+function getTaskStatus(item) {
+  const s = getCol(item, COLS.TASK_STATUS);
+  if (!s) return 'Assigned';
+  return s;
+}
+
+function getTaskAssigneeIds(item) {
+  const col = item.column_values?.find(c => c.id === COLS.TASK_ASSIGNEE);
+  if (!col || !col.value || col.value === 'null') return [];
+  try {
+    const p = JSON.parse(col.value);
+    return (p.personsAndTeams || []).filter(x => x.kind === 'person').map(x => String(x.id));
+  } catch { return []; }
+}
+
+function getUserById(id) {
+  return PAFC_USERS.find(u => u.id === String(id)) || null;
+}
+
+function getAreaClass(area) {
+  if (!area) return 'default';
+  const map = { 'Ecommerce': 'ecommerce', 'Logistics': 'logistics', 'Data Entry': 'data-entry', 'Marketing': 'marketing', 'Custom': 'custom' };
+  return map[area] || 'default';
+}
+
+function formatDueDate(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(dateStr + 'T00:00:00');
+  const diff = Math.round((due - today) / 86400000);
+  const formatted = due.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  if (diff < 0) return { text: `Overdue - ${formatted}`, cls: 'overdue' };
+  if (diff === 0) return { text: 'Due today', cls: 'today' };
+  if (diff === 1) return { text: 'Due tomorrow', cls: '' };
+  return { text: `Due ${formatted}`, cls: '' };
+}
+
+function populateAssigneeFilter() {
+  const sel = document.getElementById('filter-assignee');
+  if (!sel) return;
+  const usedIds = new Set(state.tasks.flatMap(t => getTaskAssigneeIds(t)));
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Assignees</option>' +
+    PAFC_USERS.filter(u => usedIds.has(u.id)).map(u => `<option value="${u.id}" ${u.id === current ? 'selected' : ''}>${u.name}</option>`).join('');
+}
+
+// ── RENDER TASKS ──
+function renderTasks() {
+  if (!currentLaunch) {
+    document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>No launch selected</h3><p>Select or create a launch first</p></div>`;
+    return;
+  }
+
+  document.getElementById('tasks-title').textContent = `Tasks - ${currentLaunch}`;
+  populateAssigneeFilter();
+
+  const filterStatus   = document.getElementById('filter-status')?.value || '';
+  const filterArea     = document.getElementById('filter-area')?.value || '';
+  const filterAssignee = document.getElementById('filter-assignee')?.value || '';
+
+  let tasks = [...state.tasks];
+
+  // Apply filters
+  if (filterStatus)   tasks = tasks.filter(t => getTaskStatus(t) === filterStatus);
+  if (filterArea)     tasks = tasks.filter(t => getCol(t, COLS.TASK_AREA) === filterArea);
+  if (filterAssignee) tasks = tasks.filter(t => getTaskAssigneeIds(t).includes(filterAssignee));
+
+  // Sort: incomplete by due date, completed at bottom
+  const incomplete = tasks.filter(t => getTaskStatus(t) !== 'Completed').sort((a,b) => {
+    const da = getCol(a, COLS.TASK_DUE) || '9999-99-99';
+    const db = getCol(b, COLS.TASK_DUE) || '9999-99-99';
+    return da.localeCompare(db);
+  });
+  const completed = tasks.filter(t => getTaskStatus(t) === 'Completed').sort((a,b) => {
+    return (getCol(a, COLS.TASK_DUE) || '').localeCompare(getCol(b, COLS.TASK_DUE) || '');
+  });
+  const sorted = [...incomplete, ...completed];
+
+  if (!sorted.length) {
+    const hasFilters = filterStatus || filterArea || filterAssignee;
+    document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>${hasFilters ? 'No tasks match your filters' : 'No tasks yet'}</h3><p>${hasFilters ? 'Try clearing your filters' : 'Add your first task using the button above'}</p></div>`;
+    return;
+  }
+
+  // Group: active then completed with divider
+  let html = '';
+  if (incomplete.length) html += incomplete.map(t => taskCardHTML(t)).join('');
+  if (completed.length) {
+    if (incomplete.length) html += `<div class="section-divider" style="margin-top:16px">Completed (${completed.length})</div>`;
+    html += completed.map(t => taskCardHTML(t)).join('');
+  }
+
+  document.getElementById('tasks-content').innerHTML = `<div class="tasks-list">${html}</div>`;
+}
+
+function taskCardHTML(task) {
+  const status   = getTaskStatus(task);
+  const area     = getCol(task, COLS.TASK_AREA);
+  const due      = getCol(task, COLS.TASK_DUE);
+  const details  = getCol(task, COLS.TASK_DETAILS);
+  const assigneeIds = getTaskAssigneeIds(task);
+  const assignees = assigneeIds.map(id => getUserById(id)).filter(Boolean);
+
+  const statusIcon = status === 'Completed' ? '✓' : status === 'In Progress' ? '●' : '';
+  const statusCls  = status === 'Completed' ? 'completed' : status === 'In Progress' ? 'in-progress' : '';
+  const nextStatus = status === 'Assigned' ? 'In Progress' : status === 'In Progress' ? 'Completed' : 'Assigned';
+  const nextLabel  = `Click to mark ${nextStatus}`;
+
+  const dueInfo = due ? formatDueDate(due) : null;
+
+  const assigneeHTML = assignees.length ? `
+    <div class="assignee-wrap">
+      ${assignees.map(u => `<img class="assignee-avatar" src="${u.photo}" alt="${u.name}" title="${u.name}" onerror="this.style.display='none'">`).join('')}
+      <span style="font-size:11px;color:var(--text-mid)">${assignees.map(u => u.name.split(' ')[0]).join(', ')}</span>
+    </div>` : '';
+
+  const detailsHTML = details ? `<div class="task-details-text">${details.replace(/https?:\/\/[^\s]+/g, url => `<a href="${url}" target="_blank">${url}</a>`)}</div>` : '';
+
+  return `<div class="task-card ${status === 'Completed' ? 'completed' : ''}">
+    <button class="task-status-btn ${statusCls}" onclick="cycleTaskStatus('${task.id}')" title="${nextLabel}">${statusIcon}</button>
+    <div class="task-card-body">
+      <div class="task-card-top">
+        <span class="task-card-name">${task.name}</span>
+        ${area ? `<span class="area-pill ${getAreaClass(area)}">${area}</span>` : ''}
+      </div>
+      <div class="task-card-meta">
+        ${dueInfo ? `<span class="task-due ${dueInfo.cls}">📅 ${dueInfo.text}</span>` : ''}
+        ${assigneeHTML}
+      </div>
+      ${detailsHTML}
+    </div>
+    <div class="item-actions">
+      <button class="btn-edit" onclick="editTaskItem('${task.id}')">Edit</button>
+      <button class="btn-delete" onclick="confirmDelete('${task.id}','tasks','${task.name.replace(/'/g,"\\'")}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+// ── CYCLE STATUS ──
+async function cycleTaskStatus(id) {
+  const task = state.tasks.find(t => t.id === id);
+  if (!task) return;
+  const current = getTaskStatus(task);
+  const next = current === 'Assigned' ? 'In Progress' : current === 'In Progress' ? 'Completed' : 'Assigned';
+  try {
+    const updated = await updateItem(id, { [COLS.TASK_STATUS]: { label: next } });
+    task.column_values = updated.column_values;
+    const gi = allItems.findIndex(i => i.id === id);
+    if (gi > -1) allItems[gi].column_values = updated.column_values;
+    renderTasks();
+    toast(`Marked ${next}`, 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── TASK FORM ──
+function taskForm(task) {
+  const name     = task?.name || '';
+  const area     = task ? getCol(task, COLS.TASK_AREA) : '';
+  const due      = task ? getCol(task, COLS.TASK_DUE) : '';
+  const details  = task ? getCol(task, COLS.TASK_DETAILS) : '';
+  const assigneeIds = task ? getTaskAssigneeIds(task) : [];
+  const status   = task ? getTaskStatus(task) : 'Assigned';
+
+  const userOptions = PAFC_USERS.map(u =>
+    `<option value="${u.id}" ${assigneeIds.includes(u.id) ? 'selected' : ''}>${u.name}</option>`).join('');
+
+  return `
+    <div class="form-group"><label class="form-label">Task Name</label><input class="form-input" id="f-tk-name" value="${name}" placeholder="e.g. Upload product imagery to BigCommerce"></div>
+    <div class="form-group"><label class="form-label">Area</label>
+      <select class="form-select" id="f-tk-area">
+        <option value="">Select area...</option>
+        ${['Ecommerce','Logistics','Data Entry','Marketing','Custom'].map(a => `<option value="${a}" ${area===a?'selected':''}>${a}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Assign To</label>
+      <select class="form-select" id="f-tk-assignee" size="4" style="height:auto">
+        ${userOptions}
+      </select>
+      <p style="font-size:11px;color:var(--text-light);margin-top:4px">Hold Ctrl/Cmd to select multiple. Assignee will be notified via Monday.</p>
+    </div>
+    <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="f-tk-due" type="date" value="${due}"></div>
+    ${task ? `<div class="form-group"><label class="form-label">Status</label>
+      <select class="form-select" id="f-tk-status">
+        ${['Assigned','In Progress','Completed'].map(s => `<option value="${s}" ${status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>` : ''}
+    <div class="form-group"><label class="form-label">Details</label><textarea class="form-textarea" id="f-tk-details" placeholder="Add notes, links or context...">${details}</textarea></div>`;
+}
+
+function addTaskItem() {
+  openModal('Add Task', taskForm(null),
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="saveTaskItem(null)">Add Task</button>`);
+}
+
+function editTaskItem(id) {
+  const task = state.tasks.find(t => t.id === id);
+  openModal('Edit Task', taskForm(task),
+    `<button class="btn-danger" onclick="confirmDelete('${id}','tasks','${task.name.replace(/'/g,"\\'")}')">Delete</button>
+     <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="saveTaskItem('${id}')">Save</button>`);
+}
+
+async function saveTaskItem(id) {
+  const name     = document.getElementById('f-tk-name').value.trim();
+  const area     = document.getElementById('f-tk-area').value;
+  const due      = document.getElementById('f-tk-due').value;
+  const details  = document.getElementById('f-tk-details').value.trim();
+  const statusEl = document.getElementById('f-tk-status');
+  const status   = statusEl ? statusEl.value : 'Assigned';
+
+  // Get selected assignees
+  const assigneeSelect = document.getElementById('f-tk-assignee');
+  const selectedIds = Array.from(assigneeSelect.selectedOptions).map(o => o.value);
+
+  if (!name) { alert('Task name required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    const prevAssigneeIds = id ? getTaskAssigneeIds(state.tasks.find(t => t.id === id)) : [];
+    const newAssigneeIds  = selectedIds.filter(i => !prevAssigneeIds.includes(i));
+
+    const colVals = {
+      [COLS.LAUNCH]:       currentLaunch,
+      [COLS.TASK_AREA]:    area || null,
+      [COLS.TASK_DUE]:     due ? { date: due } : null,
+      [COLS.TASK_DETAILS]: details,
+      [COLS.TASK_STATUS]:  { label: status },
+      [COLS.TASK_ASSIGNEE]: { personsAndTeams: selectedIds.map(i => ({ id: parseInt(i), kind: 'person' })) }
+    };
+
+    if (id) {
+      const updated = await updateItem(id, colVals);
+      const task = state.tasks.find(t => t.id === id);
+      if (name !== task.name) await updateName(id, name);
+      task.name = name;
+      task.column_values = updated.column_values;
+      const gi = allItems.findIndex(i => i.id === id);
+      if (gi > -1) { allItems[gi].name = name; allItems[gi].column_values = updated.column_values; }
+    } else {
+      const created = await createItem(GROUPS.TASKS, name, colVals);
+      state.tasks.push(created);
+      allItems.push(created);
+    }
+
+    // Send Monday notifications to newly assigned users
+    if (newAssigneeIds.length) {
+      await Promise.all(newAssigneeIds.map(userId =>
+        mondayQuery(`mutation { create_notification(user_id: ${userId}, target_id: ${id || state.tasks[state.tasks.length-1]?.id}, target_type: Project, text: "You've been assigned a task for ${currentLaunch}: ${name.replace(/"/g,"'")}") { text } }`)
+          .catch(() => {}) // don't fail if notification errors
+      ));
+    }
+
+    renderTasks();
+    closeModal();
+    toast(id ? 'Task updated' : 'Task added', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
+}
+
+function clearFilters() {
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-area').value = '';
+  document.getElementById('filter-assignee').value = '';
+  renderTasks();
+}
+
+// ── INIT ──
+async function init() {
+  try {
+    await initSDK();
+    await loadAll();
+
+    // Read launch from URL param e.g. launch.html?launch=Prison+Bar+2026
+    const params = new URLSearchParams(window.location.search);
+    const launchParam = params.get('launch');
+    const tabParam    = params.get('tab');
+
+    if (launchParam && launches.includes(launchParam)) {
+      currentLaunch = launchParam;
+    } else {
+      currentLaunch = launches[launches.length - 1] || null;
+    }
+
+    populateSelector();
+    if (currentLaunch) filterState();
+
+    // If deep-linked to tasks tab (e.g. from My Tasks on home screen)
+    if (tabParam === 'tasks') {
+      currentTab = 'tasks';
+      const userParam = params.get('user');
+      const resolvedUserId = userParam || currentUserId;
+      if (resolvedUserId) {
+        setTimeout(() => {
+          const sel = document.getElementById('filter-assignee');
+          if (sel) { sel.value = resolvedUserId; }
+          renderTasks();
+        }, 100);
+      }
+      switchTab('tasks');
+    }
+
+    render();
+
+    // Refresh shoots every 60s
+    setInterval(async () => {
+      try {
+        const shootData = await mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`);
+        allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
+        render();
+      } catch {}
+    }, 60000);
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div style="background:var(--red-pale);border:1px solid #fecaca;border-radius:12px;padding:20px;text-align:center;color:var(--red)"><strong>Could not load from Monday.com</strong><br><span style="font-size:12px;opacity:.8">${e.message}</span></div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
