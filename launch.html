@@ -1182,18 +1182,32 @@ function switchTab(tab) {
 }
 
 // ── TASKS HELPERS ──
-// Monday status column uses default labels — map to our display names
-const STATUS_TO_LABEL = { 'Assigned': 'Working on it', 'In Progress': 'Done', 'Completed': 'Stuck' };
-const LABEL_TO_STATUS = { 'Working on it': 'Assigned', 'Done': 'In Progress', 'Stuck': 'Completed' };
+// Monday Task Status column — use index numbers (more reliable than label text)
+// 0 = Working on it (Assigned), 1 = Done (In Progress), 2 = Stuck (Completed)
+const STATUS_TO_INDEX = { 'Assigned': 0, 'In Progress': 1, 'Completed': 2 };
+const INDEX_TO_STATUS = { 0: 'Assigned', 1: 'In Progress', 2: 'Completed' };
 
 function getTaskStatus(item) {
   const col = item.column_values?.find(c => c.id === COLS.TASK_STATUS);
   if (!col || !col.value || col.value === 'null') return 'Assigned';
   try {
     const p = JSON.parse(col.value);
+    if (p === null) return 'Assigned';
+    // Monday returns index as a number
+    const idx = p.index;
+    if (idx !== undefined && INDEX_TO_STATUS[idx] !== undefined) return INDEX_TO_STATUS[idx];
+    // Fallback: match by label text
     const label = p?.label || col.text || '';
-    return LABEL_TO_STATUS[label] || 'Assigned';
+    if (label === 'Working on it') return 'Assigned';
+    if (label === 'Done') return 'In Progress';
+    if (label === 'Stuck') return 'Completed';
+    return 'Assigned';
   } catch { return 'Assigned'; }
+}
+
+function statusColVal(displayStatus) {
+  const idx = STATUS_TO_INDEX[displayStatus] ?? 0;
+  return { index: idx };
 }
 
 function getTaskAssigneeIds(item) {
@@ -1384,7 +1398,7 @@ async function cycleTaskStatus(id) {
   }
 
   try {
-    const colVals = { [COLS.TASK_STATUS]: { label: STATUS_TO_LABEL[next] } };
+    const colVals = { [COLS.TASK_STATUS]: statusColVal(next) };
     // If cycling back from Completed, clear the completed date
     if (current === 'Completed') colVals[COLS.TASK_COMPLETED] = null;
     const updated = await updateItem(id, colVals);
@@ -1400,7 +1414,7 @@ async function doMarkComplete(id, completedDate) {
   if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   try {
     const colVals = {
-      [COLS.TASK_STATUS]: { label: STATUS_TO_LABEL['Completed'] },
+      [COLS.TASK_STATUS]: statusColVal('Completed'),
       [COLS.TASK_COMPLETED]: completedDate ? { date: completedDate } : null
     };
     const updated = await updateItem(id, colVals);
@@ -1503,7 +1517,7 @@ async function saveTaskItem(id) {
       [COLS.TASK_DEPT]:       dept || null,
       [COLS.TASK_DUE]:        due ? { date: due } : null,
       [COLS.TASK_DETAILS]:    details,
-      [COLS.TASK_STATUS]:     { label: STATUS_TO_LABEL[status] || STATUS_TO_LABEL['Assigned'] },
+      [COLS.TASK_STATUS]:     statusColVal(status),
       [COLS.TASK_COMPLETED]:  completedDate ? { date: completedDate } : null,
       [COLS.TASK_ASSIGNEE]:   { personsAndTeams: selectedIds.map(i => ({ id: parseInt(i), kind: 'person' })) }
     };
