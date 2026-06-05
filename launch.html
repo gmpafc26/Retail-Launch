@@ -484,21 +484,27 @@ async function mondayQuery(query) {
 async function createItem(groupId, name, colVals) {
   const vals = JSON.stringify(JSON.stringify(colVals));
   const q = `mutation { create_item(board_id: ${BOARD_ID}, group_id: "${groupId}", item_name: ${JSON.stringify(name)}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
-  return (await mondayQuery(q)).create_item;
+  const result = (await mondayQuery(q)).create_item;
+  cacheSet('launch', allItems); // update launch cache with current in-memory state
+  return result;
 }
 
 async function updateItem(itemId, colVals) {
   const vals = JSON.stringify(JSON.stringify(colVals));
   const q = `mutation { change_multiple_column_values(board_id: ${BOARD_ID}, item_id: ${itemId}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
-  return (await mondayQuery(q)).change_multiple_column_values;
+  const result = (await mondayQuery(q)).change_multiple_column_values;
+  cacheSet('launch', allItems); // update cache with current in-memory state
+  return result;
 }
 
 async function updateName(itemId, name) {
   await mondayQuery(`mutation { change_item_name(board_id: ${BOARD_ID}, item_id: ${itemId}, value: ${JSON.stringify(name)}) { id } }`);
+  cacheSet('launch', allItems);
 }
 
 async function deleteItem(itemId) {
   await mondayQuery(`mutation { delete_item(item_id: ${itemId}) { id } }`);
+  cacheSet('launch', allItems);
 }
 
 // ── HELPERS ──
@@ -557,24 +563,78 @@ function closeModal() { document.getElementById('modal-overlay').classList.remov
 function closeModalOnOverlay(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
 
 // ── LOAD ALL DATA ──
+// ── SESSION CACHE ──
+const CACHE_TTL = { launch: 2 * 60 * 1000, external: 5 * 60 * 1000 }; // 2min / 5min
+
+function cacheGet(key) {
+  try {
+    const raw = sessionStorage.getItem('lhub_' + key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    const ttl = key === 'launch' ? CACHE_TTL.launch : CACHE_TTL.external;
+    if (Date.now() - ts > ttl) { sessionStorage.removeItem('lhub_' + key); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function cacheSet(key, data) {
+  try { sessionStorage.setItem('lhub_' + key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
+function cacheBust() {
+  ['launch','shoots','graphics','video'].forEach(k => {
+    try { sessionStorage.removeItem('lhub_' + k); } catch {}
+  });
+}
+
 async function loadAll() {
-  const [launchData, shootData, graphicsData, videoData] = await Promise.all([
-    mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
-    mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`),
-    mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
-    mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`)
-  ]);
-  allItems = launchData.boards[0].items_page.items;
-  allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
-  allGraphicRequests = graphicsData.boards[0].items_page.items;
-  const videoPage1 = videoData.boards[0].items_page;
-  allVideoRequests = videoPage1.items;
-  if (videoPage1.cursor) {
-    try {
-      const vp2 = await mondayQuery(`{ next_items_page(limit: 500, cursor: "${videoPage1.cursor}") { cursor items { id name group { id } column_values { id value text } } } }`);
-      allVideoRequests = [...allVideoRequests, ...vp2.next_items_page.items];
-    } catch(e) { console.warn('Video page 2 fetch failed:', e); }
+  // Try to serve from session cache first
+  let launchItems  = cacheGet('launch');
+  let shootItems   = cacheGet('shoots');
+  let graphicItems = cacheGet('graphics');
+  let videoItems   = cacheGet('video');
+
+  // Fetch only what's missing/stale — in parallel
+  const toFetch = [];
+  if (!launchItems)  toFetch.push('launch');
+  if (!shootItems)   toFetch.push('shoots');
+  if (!graphicItems) toFetch.push('graphics');
+  if (!videoItems)   toFetch.push('video');
+
+  if (toFetch.length) {
+    const queries = toFetch.map(k => {
+      if (k === 'launch')   return mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`);
+      if (k === 'shoots')   return mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`);
+      if (k === 'graphics') return mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`);
+      if (k === 'video')    return mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`);
+    });
+    const results = await Promise.all(queries);
+
+    toFetch.forEach((k, idx) => {
+      const res = results[idx];
+      if (k === 'launch')   { launchItems  = res.boards[0].items_page.items; cacheSet('launch', launchItems); }
+      if (k === 'shoots')   { shootItems   = res.boards[0].items_page.items; cacheSet('shoots', shootItems); }
+      if (k === 'graphics') { graphicItems = res.boards[0].items_page.items; cacheSet('graphics', graphicItems); }
+      if (k === 'video') {
+        const page1 = res.boards[0].items_page;
+        videoItems = page1.items;
+        if (page1.cursor) {
+          // Fetch page 2 async — update cache when done
+          mondayQuery(`{ next_items_page(limit: 500, cursor: "${page1.cursor}") { cursor items { id name group { id } column_values { id value text } } } }`)
+            .then(vp2 => {
+              allVideoRequests = [...videoItems, ...vp2.next_items_page.items];
+              cacheSet('video', allVideoRequests);
+            }).catch(() => {});
+        }
+        cacheSet('video', videoItems);
+      }
+    });
   }
+
+  allItems = launchItems;
+  allShoots = shootItems.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
+  allGraphicRequests = graphicItems;
+  allVideoRequests = videoItems;
 
   // Load departments from Config group
   departments = allItems
@@ -2153,7 +2213,7 @@ async function init() {
 
     render();
 
-    // Refresh shoots every 60s
+    // Refresh external boards every 60s
     setInterval(async () => {
       try {
         const [shootData, graphicsData, videoData] = await Promise.all([
@@ -2164,6 +2224,9 @@ async function init() {
         allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
         allGraphicRequests = graphicsData.boards[0].items_page.items;
         allVideoRequests = videoData.boards[0].items_page.items;
+        cacheSet('shoots', shootData.boards[0].items_page.items);
+        cacheSet('graphics', allGraphicRequests);
+        cacheSet('video', allVideoRequests);
         render();
       } catch {}
     }, 60000);
