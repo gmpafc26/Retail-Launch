@@ -1182,10 +1182,18 @@ function switchTab(tab) {
 }
 
 // ── TASKS HELPERS ──
+// Monday status column uses default labels — map to our display names
+const STATUS_TO_LABEL = { 'Assigned': 'Working on it', 'In Progress': 'Done', 'Completed': 'Stuck' };
+const LABEL_TO_STATUS = { 'Working on it': 'Assigned', 'Done': 'In Progress', 'Stuck': 'Completed' };
+
 function getTaskStatus(item) {
-  const s = getCol(item, COLS.TASK_STATUS);
-  if (!s) return 'Assigned';
-  return s;
+  const col = item.column_values?.find(c => c.id === COLS.TASK_STATUS);
+  if (!col || !col.value || col.value === 'null') return 'Assigned';
+  try {
+    const p = JSON.parse(col.value);
+    const label = p?.label || col.text || '';
+    return LABEL_TO_STATUS[label] || 'Assigned';
+  } catch { return 'Assigned'; }
 }
 
 function getTaskAssigneeIds(item) {
@@ -1376,7 +1384,7 @@ async function cycleTaskStatus(id) {
   }
 
   try {
-    const colVals = { [COLS.TASK_STATUS]: { label: next } };
+    const colVals = { [COLS.TASK_STATUS]: { label: STATUS_TO_LABEL[next] } };
     // If cycling back from Completed, clear the completed date
     if (current === 'Completed') colVals[COLS.TASK_COMPLETED] = null;
     const updated = await updateItem(id, colVals);
@@ -1392,7 +1400,7 @@ async function doMarkComplete(id, completedDate) {
   if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   try {
     const colVals = {
-      [COLS.TASK_STATUS]: { label: 'Completed' },
+      [COLS.TASK_STATUS]: { label: STATUS_TO_LABEL['Completed'] },
       [COLS.TASK_COMPLETED]: completedDate ? { date: completedDate } : null
     };
     const updated = await updateItem(id, colVals);
@@ -1495,7 +1503,7 @@ async function saveTaskItem(id) {
       [COLS.TASK_DEPT]:       dept || null,
       [COLS.TASK_DUE]:        due ? { date: due } : null,
       [COLS.TASK_DETAILS]:    details,
-      [COLS.TASK_STATUS]:     { label: status },
+      [COLS.TASK_STATUS]:     { label: STATUS_TO_LABEL[status] || STATUS_TO_LABEL['Assigned'] },
       [COLS.TASK_COMPLETED]:  completedDate ? { date: completedDate } : null,
       [COLS.TASK_ASSIGNEE]:   { personsAndTeams: selectedIds.map(i => ({ id: parseInt(i), kind: 'person' })) }
     };
