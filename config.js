@@ -33,7 +33,7 @@ const LAUNCH_HUB_CONFIG = {
     BIGCOMMERCE_URL:  "link_mm40z35t",
     SEVERITY:         "color_mm403mv0",
     TASK_STATUS:      "color_mm41skbm",
-    TASK_DEPT:        "dropdown_mm41a0hx",
+    TASK_DEPT:        "text_mm41ymkq",
     TASK_DUE:         "date_mm41ampt",
     TASK_ASSIGNEE:    "multiple_person_mm41b66x",
     TASK_DETAILS:     "long_text_mm418b1f",
