@@ -4,7 +4,7 @@ const LAUNCH_HUB_CONFIG = {
   SHOOT_BOARD_ID: "18412284375",
   GRAPHICS_BOARD_ID: "1148821846",
   GRAPHICS_BOARD_URL: "https://pafc-team.monday.com/boards/1148821846/views/119810071",
-  GRAPHICS_GROUP: "new_group30524",
+  GRAPHICS_GROUP: null,
   GRAPHICS_DEPT_FILTER: ["Marketing", "Port Store", "Retail"],
   GRAPHICS_COLS: {
     REQUESTED_DATE: "due_date",
@@ -12,6 +12,18 @@ const LAUNCH_HUB_CONFIG = {
     STATUS:         "status",
     ASSET_FILES:    "files",
     DEPARTMENT:     "label"
+  },
+  VIDEO_BOARD_ID: "2349351235",
+  VIDEO_BOARD_URL: "https://pafc-team.monday.com/boards/2349351235",
+  VIDEO_GROUP: "duplicate_of_w_c__10_jan31520",
+  VIDEO_DEPT_FILTER: ["Retail", "Media Marketing", "Marketing"],
+  VIDEO_COLS: {
+    OWNER:        "people",
+    CAPTURE_DATE: "date59",
+    DUE_DATE:     "date5",
+    STATUS:       "status3",
+    DRAFT_FILES:  "files8",
+    DEPARTMENT:   "status_16"
   },
   SHOOT_GROUPS: { REQUESTS: "group_mm35jzs7" },
   SHOOT_COLS: {
@@ -50,6 +62,7 @@ const LAUNCH_HUB_CONFIG = {
     TASK_DETAILS:     "long_text_mm418b1f",
     TASK_COMPLETED:   "date_mm41wvp4",
     PRODUCT_IMAGE:    "long_text_mm41tk4s",
-    LINKED_GRAPHICS:  "long_text_mm41rah"
+    LINKED_GRAPHICS:  "long_text_mm41rah",
+    LINKED_VIDEO:     "long_text_mm41ac39"
   }
 };
