@@ -713,7 +713,7 @@ function render() {
   }
 
   document.getElementById('content').innerHTML =
-    renderTimeline() + renderShoots() + renderVideoRequests() + renderGraphicRequests() + renderResources() + renderProducts() + renderNotes();
+    renderTimeline() + renderShoots() + renderGraphicRequests() + renderResources() + renderProducts() + renderNotes();
 }
 
 // ── RENDER SECTIONS ──
@@ -844,17 +844,59 @@ function renderShoots() {
         <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif" onclick="unlinkShoot('${shoot.id}')">Remove</button>
       </div>
     </div>`;
-  }).join('') : `<div class="empty-state">No shoots linked yet - add a shoot from the ASA/CBA Hub above</div>`;
+  }).join('') : `<div class="empty-state" style="padding:10px 0">No shoots linked yet</div>`;
+
+  // Video/photo requests — same shoot-style cards
+  const linkedVideo = allVideoRequests.filter(r => linkedVideoIds.includes(r.id));
+  const videoHTML = linkedVideo.length ? linkedVideo.map(req => {
+    const owner       = getVideoCol(req, VCOLS.OWNER);
+    const captureDate = getVideoCol(req, VCOLS.CAPTURE_DATE);
+    const status      = getVideoCol(req, VCOLS.STATUS) || 'Requested';
+    const filesText   = getVideoCol(req, VCOLS.DRAFT_FILES);
+    const fileUrls    = filesText ? filesText.split(',').map(u => u.trim()).filter(Boolean) : [];
+    const captureD    = captureDate ? new Date(captureDate + 'T00:00:00') : null;
+    const filesHTML   = fileUrls.length
+      ? fileUrls.map((url, i) => `<a href="${url}" target="_blank" class="view-pill" style="font-size:10px">Draft ${i+1} ↗</a>`).join(' ')
+      : `<span style="color:var(--text-light);font-size:11px">Not available</span>`;
+    return `<div class="shoot-item">
+      ${captureD ? `<div class="shoot-date-block">
+        <div class="shoot-date-day">${captureD.getDate()}</div>
+        <div class="shoot-date-month">${captureD.toLocaleDateString('en-AU',{month:'short'})}</div>
+      </div>` : ''}
+      <div class="shoot-details">
+        <div class="shoot-name">${req.name}</div>
+        <div class="shoot-meta">
+          ${owner ? `<span>👤 ${owner}</span>` : ''}
+          <span style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;${graphicStatusStyle(status)}">${status}</span></span>
+          <span>🎬 ${filesHTML}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <a href="${LAUNCH_HUB_CONFIG.VIDEO_BOARD_URL}" target="_blank" class="shoot-link">View in Board ↗</a>
+        <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif" onclick="unlinkVideo('${req.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-state" style="padding:10px 0">No video/photo requests linked yet</div>`;
 
   return `<div class="card">
     <div class="card-header">
       <span class="card-icon">📸</span>
-      <span class="card-title">Photoshoots</span>
-      <button class="card-add-btn" onclick="openShootPicker()">+ Link Shoot</button>
+      <span class="card-title">Photoshoots &amp; Video</span>
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <button class="card-add-btn" onclick="openShootPicker()">+ Link Shoot</button>
+        <button class="card-add-btn" onclick="openVideoPicker()">+ Link Video/Photo</button>
+      </div>
     </div>
     <div class="card-body">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-light);margin-bottom:8px">📸 Shoots (ASA Hub)</div>
       <div class="shoot-list">${shootsHTML}</div>
-      <p style="font-size:11px;color:var(--text-light);margin-top:10px;text-align:right">To view or edit shoot details, visit the <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" style="color:var(--teal);font-weight:600">ASA Hub ↗</a></p>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-light);margin:16px 0 8px">🎬 Video / Photography Requests</div>
+      <div class="shoot-list">${videoHTML}</div>
+      <p style="font-size:11px;color:var(--text-light);margin-top:12px;text-align:right">
+        Shoots: <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" style="color:var(--teal);font-weight:600">ASA Hub ↗</a>
+        &nbsp;·&nbsp;
+        Video: <a href="${LAUNCH_HUB_CONFIG.VIDEO_BOARD_URL}" target="_blank" style="color:var(--teal);font-weight:600">Video/Photography Board ↗</a>
+      </p>
     </div>
   </div>`;
 }
@@ -937,52 +979,6 @@ function getVideoCol(item, colId) {
     if (colId === VCOLS.DRAFT_FILES) return col.text || '';
     return col.text || '';
   } catch { return col.text || ''; }
-}
-
-function renderVideoRequests() {
-  const linked = allVideoRequests.filter(r => linkedVideoIds.includes(r.id));
-  const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '-';
-
-  const rowsHTML = linked.length ? linked.map(req => {
-    const owner       = getVideoCol(req, VCOLS.OWNER);
-    const captureDate = getVideoCol(req, VCOLS.CAPTURE_DATE);
-    const dueDate     = getVideoCol(req, VCOLS.DUE_DATE);
-    const status      = getVideoCol(req, VCOLS.STATUS) || 'Requested';
-    const filesText   = getVideoCol(req, VCOLS.DRAFT_FILES);
-    const fileUrls    = filesText ? filesText.split(',').map(u => u.trim()).filter(Boolean) : [];
-
-    const filesHTML = fileUrls.length
-      ? fileUrls.map((url, i) => `<a href="${url}" target="_blank" class="view-pill" style="font-size:10px">Draft ${i+1} ↗</a>`).join(' ')
-      : `<span style="color:var(--text-light);font-size:11px">Not available</span>`;
-
-    return `<div class="graphic-req-row">
-      <div class="graphic-req-name">${req.name}</div>
-      <div class="graphic-req-meta">
-        ${owner       ? `<span>👤 ${owner}</span>` : ''}
-        ${captureDate ? `<span>📸 Capture: ${fmtDate(captureDate)}</span>` : ''}
-        ${dueDate     ? `<span>⏰ Due: ${fmtDate(dueDate)}</span>` : ''}
-        <span style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;${graphicStatusStyle(status)}">${status}</span></span>
-        <span style="display:flex;align-items:center;gap:4px">🎬 ${filesHTML}</span>
-      </div>
-      <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;align-self:center" onclick="unlinkVideo('${req.id}')">Remove</button>
-    </div>`;
-  }).join('')
-  : `<div class="empty-state">No video/photography requests linked yet - add one using the button above</div>`;
-
-  return `<div class="card">
-    <div class="card-header">
-      <span class="card-icon">🎬</span>
-      <span class="card-title">Video / Photography Requests</span>
-      <div style="display:flex;gap:6px;margin-left:auto">
-        <a href="${LAUNCH_HUB_CONFIG.VIDEO_BOARD_URL}" target="_blank" class="view-pill" style="font-size:10px">View Board ↗</a>
-        <button class="card-add-btn" onclick="openVideoPicker()">+ Link Request</button>
-      </div>
-    </div>
-    <div class="card-body">${rowsHTML}</div>
-    <div style="padding:0 18px 14px;font-size:10px;color:var(--text-light)">
-      Details update automatically from the <a href="${LAUNCH_HUB_CONFIG.VIDEO_BOARD_URL}" target="_blank" style="color:var(--teal);font-weight:600">2026 Video/Photography Workflow board ↗</a>
-    </div>
-  </div>`;
 }
 
 function openVideoPicker() {
