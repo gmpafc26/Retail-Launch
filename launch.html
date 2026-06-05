@@ -558,7 +558,7 @@ async function loadAll() {
   ]);
   allItems = launchData.boards[0].items_page.items;
   allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
-  allGraphicRequests = graphicsData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.GRAPHICS_GROUP);
+  allGraphicRequests = graphicsData.boards[0].items_page.items;
   allVideoRequests = videoData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.VIDEO_GROUP);
 
   // Load departments from Config group
@@ -2089,7 +2089,7 @@ async function init() {
           mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`)
         ]);
         allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
-        allGraphicRequests = graphicsData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.GRAPHICS_GROUP);
+        allGraphicRequests = graphicsData.boards[0].items_page.items;
         allVideoRequests = videoData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.VIDEO_GROUP);
         render();
       } catch {}
