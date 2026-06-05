@@ -562,12 +562,19 @@ async function loadAll() {
     mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
     mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`),
     mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
-    mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`)
+    mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`)
   ]);
   allItems = launchData.boards[0].items_page.items;
   allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
   allGraphicRequests = graphicsData.boards[0].items_page.items;
-  allVideoRequests = videoData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.VIDEO_GROUP);
+  const videoPage1 = videoData.boards[0].items_page;
+  allVideoRequests = videoPage1.items;
+  if (videoPage1.cursor) {
+    try {
+      const vp2 = await mondayQuery(`{ next_items_page(limit: 500, cursor: "${videoPage1.cursor}") { cursor items { id name group { id } column_values { id value text } } } }`);
+      allVideoRequests = [...allVideoRequests, ...vp2.next_items_page.items];
+    } catch(e) { console.warn('Video page 2 fetch failed:', e); }
+  }
 
   // Load departments from Config group
   departments = allItems
@@ -2160,7 +2167,7 @@ async function init() {
         ]);
         allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
         allGraphicRequests = graphicsData.boards[0].items_page.items;
-        allVideoRequests = videoData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.VIDEO_GROUP);
+        allVideoRequests = videoData.boards[0].items_page.items;
         render();
       } catch {}
     }, 60000);
