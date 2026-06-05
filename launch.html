@@ -976,20 +976,25 @@ function renderVideoRequests() {
 
 function openVideoPicker() {
   const filter = LAUNCH_HUB_CONFIG.VIDEO_DEPT_FILTER;
+  const today = new Date(); today.setHours(0,0,0,0);
   const available = allVideoRequests.filter(r => {
     if (linkedVideoIds.includes(r.id)) return false;
     const dept = getVideoCol(r, VCOLS.DEPARTMENT);
-    return !dept || filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
+    const deptMatch = !dept || filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
+    if (!deptMatch) return false;
+    // Exclude items with a past due date
+    const due = getVideoCol(r, VCOLS.DUE_DATE);
+    if (due && new Date(due + 'T00:00:00') < today) return false;
+    return true;
   });
 
   const optionsHTML = available.length
     ? available.map(r => {
-        const due  = getVideoCol(r, VCOLS.DUE_DATE);
-        const dept = getVideoCol(r, VCOLS.DEPARTMENT);
-        const d = due ? new Date(due + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short' }) : 'No date';
-        return `<option value="${r.id}">${r.name}${dept ? ' [' + dept + ']' : ''} - Due ${d}</option>`;
+        const capture = getVideoCol(r, VCOLS.CAPTURE_DATE);
+        const d = capture ? new Date(capture + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short' }) : 'No capture date';
+        return `<option value="${r.id}">${r.name} - ${d}</option>`;
       }).join('')
-    : `<option value="" disabled>No Retail/Media Marketing requests available</option>`;
+    : `<option value="" disabled>No upcoming Retail/Media Marketing requests available</option>`;
 
   openModal('Link Video/Photo Request',
     `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Select a request from the 2026 Video/Photography Workflow board. Only Retail and Media Marketing department requests are shown. Details are read-only and update automatically.</p>
@@ -1056,25 +1061,32 @@ function renderGraphicRequests() {
 
   const rowsHTML = linked.length ? linked.map(req => {
     const requestedDate = getGraphicCol(req, GCOLS.REQUESTED_DATE);
-    const dueDate       = getGraphicCol(req, GCOLS.DUE_DATE);
     const status        = getGraphicCol(req, GCOLS.STATUS) || 'Requested';
     const filesText     = getGraphicCol(req, GCOLS.ASSET_FILES);
     const fileUrls      = filesText ? filesText.split(',').map(u => u.trim()).filter(Boolean) : [];
     const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '-';
+    const reqD = requestedDate ? new Date(requestedDate + 'T00:00:00') : null;
 
     const filesHTML = fileUrls.length
       ? fileUrls.map((url, i) => `<a href="${url}" target="_blank" class="view-pill" style="font-size:10px">File ${i+1} ↗</a>`).join(' ')
       : `<span style="color:var(--text-light);font-size:11px">Not available</span>`;
 
-    return `<div class="graphic-req-row">
-      <div class="graphic-req-name">${req.name}</div>
-      <div class="graphic-req-meta">
-        ${requestedDate ? `<span>📅 Requested: ${fmtDate(requestedDate)}</span>` : ''}
-        ${dueDate       ? `<span>⏰ Due: ${fmtDate(dueDate)}</span>` : ''}
-        <span style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;${graphicStatusStyle(status)}">${status}</span></span>
-        <span style="display:flex;align-items:center;gap:4px">📎 ${filesHTML}</span>
+    return `<div class="shoot-item">
+      ${reqD ? `<div class="shoot-date-block">
+        <div class="shoot-date-day">${reqD.getDate()}</div>
+        <div class="shoot-date-month">${reqD.toLocaleDateString('en-AU',{month:'short'}).toUpperCase()}</div>
+      </div>` : ''}
+      <div class="shoot-details">
+        <div class="shoot-name">${req.name}</div>
+        <div class="shoot-meta">
+          <span style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;${graphicStatusStyle(status)}">${status}</span></span>
+          <span>📎 ${filesHTML}</span>
+        </div>
       </div>
-      <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;align-self:center" onclick="unlinkGraphic('${req.id}')">Remove</button>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <a href="${LAUNCH_HUB_CONFIG.GRAPHICS_BOARD_URL}" target="_blank" class="shoot-link">View in Board ↗</a>
+        <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif" onclick="unlinkGraphic('${req.id}')">Remove</button>
+      </div>
     </div>`;
   }).join('')
   : `<div class="empty-state">No graphic requests linked yet - add one using the button above</div>`;
@@ -1097,20 +1109,25 @@ function renderGraphicRequests() {
 
 function openGraphicPicker() {
   const filter = LAUNCH_HUB_CONFIG.GRAPHICS_DEPT_FILTER;
+  const today = new Date(); today.setHours(0,0,0,0);
   const available = allGraphicRequests.filter(r => {
     if (linkedGraphicIds.includes(r.id)) return false;
     const dept = getGraphicCol(r, GCOLS.DEPARTMENT);
-    return !dept || filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
+    const deptMatch = !dept || filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
+    if (!deptMatch) return false;
+    // Exclude items with a past due date
+    const due = getGraphicCol(r, GCOLS.DUE_DATE);
+    if (due && new Date(due + 'T00:00:00') < today) return false;
+    return true;
   });
 
   const optionsHTML = available.length
     ? available.map(r => {
-        const due  = getGraphicCol(r, GCOLS.DUE_DATE);
-        const dept = getGraphicCol(r, GCOLS.DEPARTMENT);
+        const due = getGraphicCol(r, GCOLS.DUE_DATE);
         const d = due ? new Date(due + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short' }) : 'No date';
-        return `<option value="${r.id}">${r.name}${dept ? ' [' + dept + ']' : ''} - Due ${d}</option>`;
+        return `<option value="${r.id}">${r.name} - Due ${d}</option>`;
       }).join('')
-    : `<option value="" disabled>No Marketing/Port Store requests available</option>`;
+    : `<option value="" disabled>No upcoming Marketing/Port Store requests available</option>`;
 
   openModal('Link Graphic Request',
     `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Select a graphic design request from the Design Requests board. Only Marketing and Port Store department requests are shown. Details are read-only and update automatically from the source board.</p>
