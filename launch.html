@@ -424,7 +424,9 @@ const GROUPS = LAUNCH_HUB_CONFIG.GROUPS;
 const COLS = LAUNCH_HUB_CONFIG.COLUMNS;
 const SCOLS = LAUNCH_HUB_CONFIG.SHOOT_COLS;
 const GCOLS = LAUNCH_HUB_CONFIG.GRAPHICS_COLS;
+const VCOLS = LAUNCH_HUB_CONFIG.VIDEO_COLS;
 const GRAPHICS_BOARD_ID = LAUNCH_HUB_CONFIG.GRAPHICS_BOARD_ID;
+const VIDEO_BOARD_ID = LAUNCH_HUB_CONFIG.VIDEO_BOARD_ID;
 
 // ── STATE ──
 let allItems = [];
@@ -434,8 +436,10 @@ let launches = [];
 let departments = [];      // live from Config group
 let currentLaunch = null;
 let linkedShootIds = [];
-let linkedGraphicIds = [];  // graphic request IDs linked to current launch
-let allGraphicRequests = []; // live from graphics board
+let linkedGraphicIds = [];
+let linkedVideoIds = [];
+let allGraphicRequests = [];
+let allVideoRequests = [];
 let currentTab = 'hub';
 let taskViewMode = 'date';
 let isMyTasksMode = false;
@@ -546,15 +550,16 @@ function closeModalOnOverlay(e) { if (e.target === document.getElementById('moda
 
 // ── LOAD ALL DATA ──
 async function loadAll() {
-  const [launchData, shootData, graphicsData] = await Promise.all([
+  const [launchData, shootData, graphicsData, videoData] = await Promise.all([
     mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
     mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`),
-    mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`)
+    mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
+    mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`)
   ]);
   allItems = launchData.boards[0].items_page.items;
   allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
-  // Only Design Requests group, filter by Marketing/Port Store department later in picker
   allGraphicRequests = graphicsData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.GRAPHICS_GROUP);
+  allVideoRequests = videoData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.VIDEO_GROUP);
 
   // Load departments from Config group
   departments = allItems
@@ -601,7 +606,12 @@ function filterState() {
       const gparsed = JSON.parse(graw);
       linkedGraphicIds = Array.isArray(gparsed?.graphicIds) ? gparsed.graphicIds : [];
     } catch { linkedGraphicIds = []; }
-  } else { linkedShootIds = []; linkedGraphicIds = []; }
+    try {
+      const vraw = getCol(state.launch, COLS.LINKED_VIDEO);
+      const vparsed = JSON.parse(vraw);
+      linkedVideoIds = Array.isArray(vparsed?.videoIds) ? vparsed.videoIds : [];
+    } catch { linkedVideoIds = []; }
+  } else { linkedShootIds = []; linkedGraphicIds = []; linkedVideoIds = []; }
 }
 
 // ── SWITCH LAUNCH ──
@@ -688,7 +698,7 @@ function render() {
   }
 
   document.getElementById('content').innerHTML =
-    renderTimeline() + renderShoots() + renderGraphicRequests() + renderResources() + renderProducts() + renderNotes();
+    renderTimeline() + renderShoots() + renderVideoRequests() + renderGraphicRequests() + renderResources() + renderProducts() + renderNotes();
 }
 
 // ── RENDER SECTIONS ──
@@ -895,6 +905,122 @@ async function saveShootIds() {
   // Update local
   const cv = state.launch.column_values?.find(c => c.id === COLS.NOTES);
   if (cv) cv.value = JSON.stringify({ text: payload });
+}
+
+function getVideoCol(item, colId) {
+  const col = item.column_values?.find(c => c.id === colId);
+  if (!col || !col.value || col.value === 'null') return '';
+  try {
+    const p = JSON.parse(col.value);
+    if (p === null) return '';
+    if (colId === VCOLS.CAPTURE_DATE || colId === VCOLS.DUE_DATE) return p.date || '';
+    if (colId === VCOLS.STATUS || colId === VCOLS.DEPARTMENT) return p.label || col.text || '';
+    if (colId === VCOLS.OWNER) {
+      // people column — extract names from text
+      return col.text || '';
+    }
+    if (colId === VCOLS.DRAFT_FILES) return col.text || '';
+    return col.text || '';
+  } catch { return col.text || ''; }
+}
+
+function renderVideoRequests() {
+  const linked = allVideoRequests.filter(r => linkedVideoIds.includes(r.id));
+  const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '-';
+
+  const rowsHTML = linked.length ? linked.map(req => {
+    const owner       = getVideoCol(req, VCOLS.OWNER);
+    const captureDate = getVideoCol(req, VCOLS.CAPTURE_DATE);
+    const dueDate     = getVideoCol(req, VCOLS.DUE_DATE);
+    const status      = getVideoCol(req, VCOLS.STATUS) || 'Requested';
+    const filesText   = getVideoCol(req, VCOLS.DRAFT_FILES);
+    const fileUrls    = filesText ? filesText.split(',').map(u => u.trim()).filter(Boolean) : [];
+
+    const filesHTML = fileUrls.length
+      ? fileUrls.map((url, i) => `<a href="${url}" target="_blank" class="view-pill" style="font-size:10px">Draft ${i+1} ↗</a>`).join(' ')
+      : `<span style="color:var(--text-light);font-size:11px">Not available</span>`;
+
+    return `<div class="graphic-req-row">
+      <div class="graphic-req-name">${req.name}</div>
+      <div class="graphic-req-meta">
+        ${owner       ? `<span>👤 ${owner}</span>` : ''}
+        ${captureDate ? `<span>📸 Capture: ${fmtDate(captureDate)}</span>` : ''}
+        ${dueDate     ? `<span>⏰ Due: ${fmtDate(dueDate)}</span>` : ''}
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;${graphicStatusStyle(status)}">${status}</span></span>
+        <span style="display:flex;align-items:center;gap:4px">🎬 ${filesHTML}</span>
+      </div>
+      <button style="background:none;border:none;color:var(--text-light);font-size:10px;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;align-self:center" onclick="unlinkVideo('${req.id}')">Remove</button>
+    </div>`;
+  }).join('')
+  : `<div class="empty-state">No video/photography requests linked yet - add one using the button above</div>`;
+
+  return `<div class="card">
+    <div class="card-header">
+      <span class="card-icon">🎬</span>
+      <span class="card-title">Video / Photography Requests</span>
+      <div style="display:flex;gap:6px;margin-left:auto">
+        <a href="${LAUNCH_HUB_CONFIG.VIDEO_BOARD_URL}" target="_blank" class="view-pill" style="font-size:10px">View Board ↗</a>
+        <button class="card-add-btn" onclick="openVideoPicker()">+ Link Request</button>
+      </div>
+    </div>
+    <div class="card-body">${rowsHTML}</div>
+    <div style="padding:0 18px 14px;font-size:10px;color:var(--text-light)">
+      Details update automatically from the <a href="${LAUNCH_HUB_CONFIG.VIDEO_BOARD_URL}" target="_blank" style="color:var(--teal);font-weight:600">2026 Video/Photography Workflow board ↗</a>
+    </div>
+  </div>`;
+}
+
+function openVideoPicker() {
+  const filter = LAUNCH_HUB_CONFIG.VIDEO_DEPT_FILTER;
+  const available = allVideoRequests.filter(r => {
+    if (linkedVideoIds.includes(r.id)) return false;
+    const dept = getVideoCol(r, VCOLS.DEPARTMENT);
+    return !dept || filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
+  });
+
+  const optionsHTML = available.length
+    ? available.map(r => {
+        const due  = getVideoCol(r, VCOLS.DUE_DATE);
+        const dept = getVideoCol(r, VCOLS.DEPARTMENT);
+        const d = due ? new Date(due + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short' }) : 'No date';
+        return `<option value="${r.id}">${r.name}${dept ? ' [' + dept + ']' : ''} - Due ${d}</option>`;
+      }).join('')
+    : `<option value="" disabled>No Retail/Media Marketing requests available</option>`;
+
+  openModal('Link Video/Photo Request',
+    `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Select a request from the 2026 Video/Photography Workflow board. Only Retail and Media Marketing department requests are shown. Details are read-only and update automatically.</p>
+     <div class="form-group">
+       <label class="form-label">Select Request</label>
+       <select class="form-select" id="f-video-id">${optionsHTML}</select>
+     </div>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-primary" onclick="linkVideo()" ${!available.length ? 'disabled' : ''}>Link Request</button>`);
+}
+
+async function linkVideo() {
+  const id = document.getElementById('f-video-id').value;
+  if (!id) return;
+  const btn = document.querySelector('#modal-actions .btn-primary');
+  btn.disabled = true; btn.textContent = 'Linking...';
+  try {
+    linkedVideoIds = [...linkedVideoIds, id];
+    await saveVideoIds();
+    render(); closeModal(); toast('Video request linked', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Link Request'; }
+}
+
+async function unlinkVideo(id) {
+  linkedVideoIds = linkedVideoIds.filter(i => i !== id);
+  try {
+    await saveVideoIds();
+    render(); toast('Request removed', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function saveVideoIds() {
+  if (!state.launch) return;
+  const payload = JSON.stringify({ videoIds: linkedVideoIds });
+  await updateItem(state.launch.id, { [COLS.LINKED_VIDEO]: payload });
 }
 
 function getGraphicCol(item, colId) {
@@ -1957,12 +2083,14 @@ async function init() {
     // Refresh shoots every 60s
     setInterval(async () => {
       try {
-        const [shootData, graphicsData] = await Promise.all([
+        const [shootData, graphicsData, videoData] = await Promise.all([
           mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`),
-          mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`)
+          mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
+          mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`)
         ]);
         allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
         allGraphicRequests = graphicsData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.GRAPHICS_GROUP);
+        allVideoRequests = videoData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.VIDEO_GROUP);
         render();
       } catch {}
     }, 60000);
