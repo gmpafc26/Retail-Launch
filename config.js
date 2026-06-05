@@ -2,6 +2,17 @@ const LAUNCH_HUB_CONFIG = {
   MONDAY_TOKEN: "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY1NzcwMzM3NSwiYWFpIjoxMSwidWlkIjo4MjY0Njg5NiwiaWFkIjoiMjAyNi0wNS0xM1QwMDo0NjoxMC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6NzA5Mjc2LCJyZ24iOiJ1c2UxIn0.yD_YwplvFrgMpNEUU-rGQNz6GscMVfTiomF1PW4fB0c",
   BOARD_ID: "18388701820",
   SHOOT_BOARD_ID: "18412284375",
+  GRAPHICS_BOARD_ID: "1148821846",
+  GRAPHICS_BOARD_URL: "https://pafc-team.monday.com/boards/1148821846/views/119810071",
+  GRAPHICS_GROUP: "new_group30524",
+  GRAPHICS_DEPT_FILTER: ["Marketing", "Port Store", "Retail"],
+  GRAPHICS_COLS: {
+    REQUESTED_DATE: "due_date",
+    DUE_DATE:       "date5",
+    STATUS:         "status",
+    ASSET_FILES:    "files",
+    DEPARTMENT:     "label"
+  },
   SHOOT_GROUPS: { REQUESTS: "group_mm35jzs7" },
   SHOOT_COLS: {
     DATE:     "date_mm35z010",
@@ -38,6 +49,7 @@ const LAUNCH_HUB_CONFIG = {
     TASK_ASSIGNEE:    "multiple_person_mm41b66x",
     TASK_DETAILS:     "long_text_mm418b1f",
     TASK_COMPLETED:   "date_mm41wvp4",
-    PRODUCT_IMAGE:    "long_text_mm41tk4s"
+    PRODUCT_IMAGE:    "long_text_mm41tk4s",
+    LINKED_GRAPHICS:  "long_text_mm41rah"
   }
 };
