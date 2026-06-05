@@ -252,8 +252,38 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .dept-header{font-size:12px;font-weight:700;color:var(--text-mid);padding:10px 14px;background:#f8f9fb;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .dept-header .dept-count{font-size:10px;font-weight:700;background:var(--border);color:var(--text-mid);padding:1px 7px;border-radius:20px}
 .dept-section{margin-bottom:20px}
-.dept-manage-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:#fafbfc}
-.dept-manage-name{font-size:13px;font-weight:500;color:var(--text)}
+/* TASKS DASHBOARD LAYOUT */
+.tasks-dashboard{display:grid;grid-template-columns:40% 60%;gap:16px;align-items:start}
+.tasks-sidebar{display:flex;flex-direction:column;gap:8px;position:sticky;top:72px}
+.tasks-main{min-width:0}
+
+/* DEPT SUMMARY CARD */
+.dept-summary-card{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.dept-summary-card:hover{border-color:var(--teal);box-shadow:0 2px 8px rgba(10,191,191,.08)}
+.dept-summary-card.active{border-color:var(--teal);border-width:2px;box-shadow:0 0 0 3px rgba(10,191,191,.08)}
+.dept-summary-card.all-card{border-style:dashed}
+.dept-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dept-card-name{font-size:13px;font-weight:700;color:var(--navy)}
+.dept-card-total{font-size:12px;font-weight:600;color:var(--text-light);background:#f0f2f5;padding:2px 8px;border-radius:20px}
+
+/* TRAFFIC LIGHTS */
+.traffic-lights{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tl-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-mid)}
+.tl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.tl-dot.overdue{background:#ef4444}
+.tl-dot.assigned{background:#93c5fd}
+.tl-dot.in-progress{background:var(--amber)}
+.tl-dot.completed{background:var(--green)}
+
+/* PROGRESS BAR */
+.dept-progress{height:5px;background:#f0f2f5;border-radius:20px;overflow:hidden}
+.dept-progress-fill{height:100%;background:var(--green);border-radius:20px;transition:width .3s}
+
+/* REMOVE strikethrough on completed */
+.task-card.completed .task-card-name{text-decoration:none;color:var(--text)}
+.task-card.completed{opacity:1}
+
+@media(max-width:700px){.tasks-dashboard{grid-template-columns:1fr}.tasks-sidebar{position:static}}
 .tasks-empty h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
 .section-divider{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
 </style>
@@ -306,10 +336,6 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
   <div class="tasks-header">
     <span class="tasks-title" id="tasks-title">Tasks</span>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <div class="view-toggle">
-        <button class="view-toggle-btn active" id="toggle-date" onclick="setTaskView('date')">📅 By Date</button>
-        <button class="view-toggle-btn" id="toggle-dept" onclick="setTaskView('dept')">🏷️ By Department</button>
-      </div>
       <button class="manage-dept-btn" onclick="manageDepartments()">⚙️ Departments</button>
       <button class="add-task-btn" id="add-task-btn" onclick="addTaskItem()">+ Add Task</button>
     </div>
@@ -324,6 +350,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
       <option value="Assigned">Assigned</option>
       <option value="In Progress">In Progress</option>
       <option value="Completed">Completed</option>
+      <option value="Overdue">Overdue</option>
     </select>
     <select class="filter-select" id="filter-dept" onchange="renderTasks()">
       <option value="">All Departments</option>
@@ -334,8 +361,15 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
     <div class="filter-spacer"></div>
     <button class="filter-clear" onclick="clearFilters()">Clear filters</button>
   </div>
-  <div id="tasks-content">
-    <div class="loading-state"><div class="loading-spinner"></div><div>Loading tasks...</div></div>
+  <div class="tasks-dashboard">
+    <!-- LEFT: Department summary cards -->
+    <div class="tasks-sidebar" id="tasks-sidebar">
+      <div class="loading-state" style="padding:30px 0"><div class="loading-spinner"></div></div>
+    </div>
+    <!-- RIGHT: Task list -->
+    <div class="tasks-main" id="tasks-content">
+      <div class="loading-state"><div class="loading-spinner"></div><div>Loading tasks...</div></div>
+    </div>
   </div>
 </div>
 
@@ -392,7 +426,8 @@ let currentLaunch = null;
 let linkedShootIds = [];
 let currentTab = 'hub';
 let taskViewMode = 'date';
-let isMyTasksMode = false; // true when accessed from home My Tasks button
+let isMyTasksMode = false;
+let activeSidebarDept = null; // null = All
 let state = { launch: null, timeline: [], resources: [], products: [], notes: [], tasks: [] };
 
 // PAFC users list (pre-loaded for performance)
@@ -552,6 +587,7 @@ function filterState() {
 // ── SWITCH LAUNCH ──
 function switchLaunch(name) {
   currentLaunch = name;
+  activeSidebarDept = null;
   filterState();
   render();
 }
@@ -1299,10 +1335,66 @@ function populateFilters() {
     PAFC_USERS.filter(u => usedIds.has(u.id)).map(u => `<option value="${u.id}" ${u.id === current ? 'selected' : ''}>${u.name}</option>`).join('');
 }
 
+function isTaskOverdue(task) {
+  if (getTaskStatus(task) === 'Completed') return false;
+  const due = getCol(task, COLS.TASK_DUE);
+  if (!due) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return new Date(due + 'T00:00:00') < today;
+}
+
+function renderSidebar(taskPool) {
+  // Build dept stats
+  const allDepts = [...departments.map(d => d.name), 'No Department'];
+  const usedDepts = new Set(taskPool.map(t => getCol(t, COLS.TASK_DEPT) || 'No Department'));
+  const depts = allDepts.filter(d => usedDepts.has(d));
+
+  function stats(tasks) {
+    return {
+      overdue:    tasks.filter(t => isTaskOverdue(t)).length,
+      assigned:   tasks.filter(t => getTaskStatus(t) === 'Assigned' && !isTaskOverdue(t)).length,
+      inProgress: tasks.filter(t => getTaskStatus(t) === 'In Progress' && !isTaskOverdue(t)).length,
+      completed:  tasks.filter(t => getTaskStatus(t) === 'Completed').length,
+      total:      tasks.length
+    };
+  }
+
+  function cardHTML(deptName, tasks, isActive) {
+    const s = stats(tasks);
+    const pct = s.total ? Math.round((s.completed / s.total) * 100) : 0;
+    const isAll = deptName === '__all__';
+    const label = isAll ? 'All Departments' : deptName;
+    return `<div class="dept-summary-card${isActive ? ' active' : ''}${isAll ? ' all-card' : ''}" onclick="setSidebarDept(${isAll ? 'null' : `'${deptName.replace(/'/g,"\\'")}' `})">
+      <div class="dept-card-header">
+        <span class="dept-card-name">${label}</span>
+        <span class="dept-card-total">${s.total} task${s.total !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="traffic-lights">
+        ${s.overdue    ? `<span class="tl-item"><span class="tl-dot overdue"></span>${s.overdue} Overdue</span>` : ''}
+        ${s.assigned   ? `<span class="tl-item"><span class="tl-dot assigned"></span>${s.assigned} Assigned</span>` : ''}
+        ${s.inProgress ? `<span class="tl-item"><span class="tl-dot in-progress"></span>${s.inProgress} In Progress</span>` : ''}
+        ${s.completed  ? `<span class="tl-item"><span class="tl-dot completed"></span>${s.completed} Completed</span>` : ''}
+        ${!s.overdue && !s.assigned && !s.inProgress && !s.completed ? `<span style="font-size:11px;color:var(--text-light)">No tasks</span>` : ''}
+      </div>
+      ${s.total ? `<div class="dept-progress"><div class="dept-progress-fill" style="width:${pct}%"></div></div>` : ''}
+    </div>`;
+  }
+
+  const allCard = cardHTML('__all__', taskPool, activeSidebarDept === null);
+  const deptCards = depts.map(d => {
+    const tasks = taskPool.filter(t => (getCol(t, COLS.TASK_DEPT) || 'No Department') === d);
+    return cardHTML(d, tasks, activeSidebarDept === d);
+  }).join('');
+
+  document.getElementById('tasks-sidebar').innerHTML = allCard + deptCards;
+}
+
+function setSidebarDept(dept) {
+  activeSidebarDept = dept;
+  renderTasks();
+}
 // ── RENDER TASKS ──
 function renderTasks() {
-  // In My Tasks mode, pull tasks from ALL launches
-  // In normal mode, pull from current launch only
   let taskPool;
   if (isMyTasksMode) {
     taskPool = allItems.filter(i =>
@@ -1311,11 +1403,13 @@ function renderTasks() {
       getCol(i, COLS.LAUNCH) !== ''
     );
     if (!taskPool.length) {
-      document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>No tasks found</h3><p>Tasks assigned to you across all launches will appear here</p></div>`;
+      document.getElementById('tasks-sidebar').innerHTML = '';
+      document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>No tasks found</h3><p>Tasks across all launches will appear here</p></div>`;
       return;
     }
   } else {
     if (!currentLaunch) {
+      document.getElementById('tasks-sidebar').innerHTML = '';
       document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>No launch selected</h3><p>Select or create a launch first</p></div>`;
       return;
     }
@@ -1324,6 +1418,7 @@ function renderTasks() {
   }
 
   populateFilters();
+  renderSidebar(taskPool);
 
   const filterStatus   = document.getElementById('filter-status')?.value || '';
   const filterDept     = document.getElementById('filter-dept')?.value || '';
@@ -1331,55 +1426,33 @@ function renderTasks() {
   const filterLaunch   = document.getElementById('filter-launch')?.value || '';
 
   let tasks = [...taskPool];
-  if (filterStatus)   tasks = tasks.filter(t => getTaskStatus(t) === filterStatus);
+  if (activeSidebarDept) tasks = tasks.filter(t => (getCol(t, COLS.TASK_DEPT) || 'No Department') === activeSidebarDept);
+  if (filterStatus === 'Overdue') {
+    tasks = tasks.filter(t => isTaskOverdue(t));
+  } else if (filterStatus) {
+    tasks = tasks.filter(t => getTaskStatus(t) === filterStatus);
+  }
   if (filterDept)     tasks = tasks.filter(t => getCol(t, COLS.TASK_DEPT) === filterDept);
   if (filterAssignee) tasks = tasks.filter(t => getTaskAssigneeIds(t).includes(filterAssignee));
   if (filterLaunch)   tasks = tasks.filter(t => getCol(t, COLS.LAUNCH) === filterLaunch);
 
   if (!tasks.length) {
-    const hasFilters = filterStatus || filterDept || filterAssignee || filterLaunch;
-    document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>${hasFilters ? 'No tasks match your filters' : 'No tasks yet'}</h3><p>${hasFilters ? 'Try clearing your filters' : 'Add your first task using the button above'}</p></div>`;
+    const hasFilters = filterStatus || filterDept || filterAssignee || filterLaunch || activeSidebarDept;
+    document.getElementById('tasks-content').innerHTML = `<div class="tasks-empty"><h3>${hasFilters ? 'No tasks match' : 'No tasks yet'}</h3><p>${hasFilters ? 'Try clearing your filters' : 'Add your first task above'}</p></div>`;
     return;
   }
 
   const sortByDate = (a, b) => (getCol(a, COLS.TASK_DUE) || '9999').localeCompare(getCol(b, COLS.TASK_DUE) || '9999');
-  const incomplete = tasks.filter(t => getTaskStatus(t) !== 'Completed').sort(sortByDate);
-  const completed  = tasks.filter(t => getTaskStatus(t) === 'Completed').sort(sortByDate);
+  const overdue   = tasks.filter(t => isTaskOverdue(t)).sort(sortByDate);
+  const active    = tasks.filter(t => !isTaskOverdue(t) && getTaskStatus(t) !== 'Completed').sort(sortByDate);
+  const completed = tasks.filter(t => getTaskStatus(t) === 'Completed').sort(sortByDate);
 
   let html = '';
+  if (overdue.length)   html += `<div class="dept-section"><div class="dept-header" style="color:var(--red)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:6px"></span>Overdue <span class="dept-count">${overdue.length}</span></div><div class="tasks-list">${overdue.map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
+  if (active.length)    html += `<div class="dept-section"><div class="dept-header"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#93c5fd;margin-right:6px"></span>Active <span class="dept-count">${active.length}</span></div><div class="tasks-list">${active.map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
+  if (completed.length) html += `<div class="dept-section"><div class="dept-header" style="color:var(--green)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px"></span>Completed <span class="dept-count">${completed.length}</span></div><div class="tasks-list">${completed.map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
 
-  if (taskViewMode === 'date') {
-    const byDate = {};
-    incomplete.forEach(t => {
-      const d = getCol(t, COLS.TASK_DUE) || 'No due date';
-      if (!byDate[d]) byDate[d] = [];
-      byDate[d].push(t);
-    });
-    const dateKeys = Object.keys(byDate).sort((a,b) => a === 'No due date' ? 1 : b === 'No due date' ? -1 : a.localeCompare(b));
-    dateKeys.forEach(d => {
-      const label = d === 'No due date' ? 'No due date' : new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-      html += `<div class="dept-section"><div class="dept-header">📅 ${label} <span class="dept-count">${byDate[d].length}</span></div><div class="tasks-list">${byDate[d].map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
-    });
-  } else {
-    const byDept = {};
-    incomplete.forEach(t => {
-      const d = getCol(t, COLS.TASK_DEPT) || 'No Department';
-      if (!byDept[d]) byDept[d] = [];
-      byDept[d].push(t);
-    });
-    const deptOrder = departments.map(d => d.name);
-    const allDeptKeys = [...deptOrder.filter(d => byDept[d]), ...Object.keys(byDept).filter(d => !deptOrder.includes(d))];
-    allDeptKeys.forEach(d => {
-      if (!byDept[d]) return;
-      html += `<div class="dept-section"><div class="dept-header">🏷️ ${d} <span class="dept-count">${byDept[d].length}</span></div><div class="tasks-list">${byDept[d].map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
-    });
-  }
-
-  if (completed.length) {
-    html += `<div class="dept-section"><div class="dept-header" style="color:var(--green)">✓ Completed <span class="dept-count">${completed.length}</span></div><div class="tasks-list">${completed.map(t => taskCardHTML(t, isMyTasksMode)).join('')}</div></div>`;
-  }
-
-  document.getElementById('tasks-content').innerHTML = html || `<div class="tasks-empty"><h3>No tasks yet</h3><p>Add your first task using the button above</p></div>`;
+  document.getElementById('tasks-content').innerHTML = html || `<div class="tasks-empty"><h3>No tasks yet</h3><p>Add your first task above</p></div>`;
 }
 
 function taskCardHTML(task, showLaunch) {
@@ -1689,6 +1762,7 @@ async function deleteDepartment(id, name) {
 }
 
 function clearFilters() {
+  activeSidebarDept = null;
   document.getElementById('filter-status').value = '';
   document.getElementById('filter-dept').value = '';
   document.getElementById('filter-assignee').value = '';
