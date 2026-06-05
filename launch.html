@@ -1020,22 +1020,63 @@ async function saveResourceItem(id) {
 }
 
 // ── PRODUCTS CRUD ──
+// ── PRODUCT IMAGE PREVIEW ──
+function previewProductImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const preview = document.getElementById('f-p-img-preview');
+  const thumb   = document.getElementById('f-p-img-thumb');
+  const fname   = document.getElementById('f-p-img-name');
+  preview.style.display = 'block';
+  thumb.src = URL.createObjectURL(file);
+  fname.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + 'KB)';
+}
+
 function prodForm(item) {
+  const hasImg = item ? !!getCol(item, COLS.URL) : false;
   return `
     <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="f-p-n" value="${item?.name||''}" placeholder="e.g. PA Macron 2026 Prison Bar Guernsey - Adult"></div>
-    <div class="form-group"><label class="form-label">Product URL (BigCommerce)</label><input class="form-input" id="f-p-u" value="${item ? getCol(item,COLS.BIGCOMMERCE_URL) : ''}" placeholder="https://portstore.com.au/..."></div>
-    <div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f-p-i" value="${item ? getCol(item,COLS.URL) : ''}" placeholder="https://cdn11.bigcommerce.com/..."><p style="font-size:11px;color:var(--text-light);margin-top:4px">Paste the direct image URL from BigCommerce CDN</p></div>`;
+    <div class="form-group"><label class="form-label">Port Store URL</label><input class="form-input" id="f-p-u" value="${item ? getCol(item,COLS.BIGCOMMERCE_URL) : ''}" placeholder="https://portstore.com.au/..."></div>
+    <div class="form-group">
+      <label class="form-label">Product Image</label>
+      ${hasImg ? '<p style="font-size:11px;color:var(--green);margin-bottom:6px">✓ Image uploaded — choose a new file to replace it</p>' : ''}
+      <input type="file" id="f-p-img-file" accept="image/*" style="display:none" onchange="previewProductImage(this)">
+      <button type="button" class="form-input" style="text-align:left;cursor:pointer;color:var(--text-mid)" onclick="document.getElementById('f-p-img-file').click()">
+        📁 ${hasImg ? 'Replace image...' : 'Choose image file...'}
+      </button>
+      <div id="f-p-img-preview" style="margin-top:8px;display:none">
+        <img id="f-p-img-thumb" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+        <p style="font-size:11px;color:var(--text-light);margin-top:4px" id="f-p-img-name"></p>
+      </div>
+      <p style="font-size:11px;color:var(--text-light);margin-top:4px">JPG, PNG or WebP. Square crop recommended. Max ~800KB for best performance.</p>
+    </div>`;
 }
 function addProductItem() { openModal('Add Product', prodForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`); }
 function editProductItem(id) { const item = state.products.find(i=>i.id===id); openModal('Edit Product', prodForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem('${id}')">Save</button>`); }
 async function saveProductItem(id) {
-  const name = document.getElementById('f-p-n').value.trim();
-  const url  = document.getElementById('f-p-u').value.trim();
-  const img  = document.getElementById('f-p-i').value.trim();
+  const name    = document.getElementById('f-p-n').value.trim();
+  const url     = document.getElementById('f-p-u').value.trim();
+  const imgFile = document.getElementById('f-p-img-file')?.files[0];
   if (!name) { alert('Product name required'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    await saveItem(id,'products',GROUPS.PRODUCTS, name, { [COLS.BIGCOMMERCE_URL]: url?{url,text:name}:null, [COLS.URL]: img?{url:img,text:'Image'}:null });
+    // Convert image file to base64 if one was selected
+    let imgBase64 = null;
+    if (imgFile) {
+      imgBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result); // data:image/...;base64,...
+        reader.onerror = reject;
+        reader.readAsDataURL(imgFile);
+      });
+    }
+    // Keep existing image if no new file chosen
+    const existingImg = id ? getCol(state.products.find(i=>i.id===id), COLS.URL) : null;
+    const finalImg = imgBase64 || existingImg;
+    await saveItem(id,'products',GROUPS.PRODUCTS, name, {
+      [COLS.BIGCOMMERCE_URL]: url ? {url, text: name} : null,
+      [COLS.URL]: finalImg ? {url: finalImg, text: 'Image'} : null
+    });
     render(); closeModal(); toast(id?'Product updated':'Product added','success');
   } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
 }
