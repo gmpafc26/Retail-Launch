@@ -243,7 +243,12 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .view-toggle-btn.active{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .manage-dept-btn{background:#f0f2f5;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s;white-space:nowrap}
 .manage-dept-btn:hover{background:var(--border)}
-.completed-date{font-size:11px;color:var(--green);display:flex;align-items:center;gap:3px}
+.status-pill-wrap{display:inline-flex;align-items:center}
+.status-select{appearance:none;border:none;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:20px;transition:all .15s}
+.status-select--assigned{background-color:#eff6ff;color:#1e40af}
+.status-select--in-progress{background-color:var(--amber-pale);color:#92400e}
+.status-select--completed{background-color:var(--green-pale);color:#065f46}
+.status-select:hover{filter:brightness(.95)}
 .dept-header{font-size:12px;font-weight:700;color:var(--text-mid);padding:10px 14px;background:#f8f9fb;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .dept-header .dept-count{font-size:10px;font-weight:700;background:var(--border);color:var(--text-mid);padding:1px 7px;border-radius:20px}
 .dept-section{margin-bottom:20px}
@@ -1359,13 +1364,19 @@ function taskCardHTML(task) {
   const detailsHTML = details ? `<div class="task-details-text">${details.replace(/https?:\/\/[^\s]+/g, url => `<a href="${url}" target="_blank">${url}</a>`)}</div>` : '';
 
   return `<div class="task-card ${status === 'Completed' ? 'completed' : ''}">
-    <button class="task-status-btn ${statusCls}" onclick="cycleTaskStatus('${task.id}')" title="${nextLabel}">${statusIcon}</button>
     <div class="task-card-body">
       <div class="task-card-top">
         <span class="task-card-name">${task.name}</span>
         ${area ? `<span class="dept-pill ${getDeptClass(area)}">${area}</span>` : ''}
       </div>
       <div class="task-card-meta">
+        <div class="status-pill-wrap">
+          <select class="status-select status-select--${statusCls||'assigned'}" onchange="handleStatusChange('${task.id}', this.value)" onclick="event.stopPropagation()">
+            <option value="Assigned" ${status==='Assigned'?'selected':''}>Assigned</option>
+            <option value="In Progress" ${status==='In Progress'?'selected':''}>In Progress</option>
+            <option value="Completed" ${status==='Completed'?'selected':''}>Completed</option>
+          </select>
+        </div>
         ${dueInfo ? `<span class="task-due ${dueInfo.cls}">📅 ${dueInfo.text}</span>` : ''}
         ${completedDateStr ? `<span class="completed-date">✓ Completed ${completedDateStr}</span>` : ''}
         ${assigneeHTML}
@@ -1380,11 +1391,31 @@ function taskCardHTML(task) {
 }
 
 // ── CYCLE STATUS ──
-async function cycleTaskStatus(id) {
+async function handleStatusChange(id, newStatus) {
+  if (newStatus === 'Completed') {
+    cycleTaskStatus(id, 'Completed');
+  } else {
+    const task = state.tasks.find(t => t.id === id);
+    if (!task) return;
+    try {
+      const colVals = {
+        [COLS.TASK_STATUS]: statusColVal(newStatus),
+        ...(newStatus !== 'Completed' ? { [COLS.TASK_COMPLETED]: null } : {})
+      };
+      const updated = await updateItem(id, colVals);
+      task.column_values = updated.column_values;
+      const gi = allItems.findIndex(i => i.id === id);
+      if (gi > -1) allItems[gi].column_values = updated.column_values;
+      renderTasks(); toast(`Marked ${newStatus}`, 'success');
+    } catch(e) { toast('Error: ' + e.message, 'error'); renderTasks(); }
+  }
+}
+
+async function cycleTaskStatus(id, forceNext) {
   const task = state.tasks.find(t => t.id === id);
   if (!task) return;
   const current = getTaskStatus(task);
-  const next = current === 'Assigned' ? 'In Progress' : current === 'In Progress' ? 'Completed' : 'Assigned';
+  const next = forceNext || (current === 'Assigned' ? 'In Progress' : current === 'In Progress' ? 'Completed' : 'Assigned');
 
   // If cycling to Completed, prompt for completed date
   if (next === 'Completed') {
