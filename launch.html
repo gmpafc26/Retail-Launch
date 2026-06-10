@@ -319,7 +319,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
       <span class="launch-select-arrow">▾</span>
     </div>
     <button class="new-launch-btn" onclick="createNewLaunch()">+ New Launch</button>
-    <a href="how-it-works.html" style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;white-space:nowrap" title="How it works">? Help</a>
+    <a href="how-it-works.html" style="font-size:12px;font-weight:600;color:var(--navy);background:#fff;border:none;border-radius:8px;padding:7px 14px;text-decoration:none;white-space:nowrap;flex-shrink:0">How it works</a>
   </div>
 </div>
 
@@ -595,7 +595,7 @@ async function loadAll() {
   let graphicItems = cacheGet('graphics');
   let videoItems   = cacheGet('video');
 
-  // Fetch only what's missing/stale — in parallel
+  // Fetch only what's missing/stale -  in parallel
   const toFetch = [];
   if (!launchItems)  toFetch.push('launch');
   if (!shootItems)   toFetch.push('shoots');
@@ -620,7 +620,7 @@ async function loadAll() {
         const page1 = res.boards[0].items_page;
         videoItems = page1.items;
         if (page1.cursor) {
-          // Fetch page 2 async — update cache when done
+          // Fetch page 2 async -  update cache when done
           mondayQuery(`{ next_items_page(limit: 500, cursor: "${page1.cursor}") { cursor items { id name group { id } column_values { id value text } } } }`)
             .then(vp2 => {
               allVideoRequests = [...videoItems, ...vp2.next_items_page.items];
@@ -907,7 +907,7 @@ function renderShoots() {
     </div>`;
   }).join('') : `<div class="empty-state" style="padding:10px 0">No shoots linked yet</div>`;
 
-  // Video/photo requests — same shoot-style cards
+  // Video/photo requests -  same shoot-style cards
   const linkedVideo = allVideoRequests.filter(r => linkedVideoIds.includes(r.id));
   const videoHTML = linkedVideo.length ? linkedVideo.map(req => {
     const owner       = getVideoCol(req, VCOLS.OWNER);
@@ -1034,7 +1034,7 @@ function getVideoCol(item, colId) {
     if (colId === VCOLS.CAPTURE_DATE || colId === VCOLS.DUE_DATE) return p.date || '';
     if (colId === VCOLS.STATUS || colId === VCOLS.DEPARTMENT) return p.label || col.text || '';
     if (colId === VCOLS.OWNER) {
-      // people column — extract names from text
+      // people column -  extract names from text
       return col.text || '';
     }
     if (colId === VCOLS.DRAFT_FILES) return col.text || '';
@@ -1440,7 +1440,7 @@ function prodForm(item) {
     <div class="form-group"><label class="form-label">Port Store URL</label><input class="form-input" id="f-p-u" value="${item ? getCol(item,COLS.BIGCOMMERCE_URL) : ''}" placeholder="https://portstore.com.au/..."></div>
     <div class="form-group">
       <label class="form-label">Product Image</label>
-      ${hasImg ? '<p style="font-size:11px;color:var(--green);margin-bottom:6px">✓ Image uploaded — choose a new file to replace it</p>' : ''}
+      ${hasImg ? '<p style="font-size:11px;color:var(--green);margin-bottom:6px">✓ Image uploaded -  choose a new file to replace it</p>' : ''}
       <input type="file" id="f-p-img-file" accept="image/*" style="display:none" onchange="previewProductImage(this)">
       <button type="button" class="form-input" style="text-align:left;cursor:pointer;color:var(--text-mid)" onclick="document.getElementById('f-p-img-file').click()">
         📁 ${hasImg ? 'Replace image...' : 'Choose image file...'}
@@ -1601,7 +1601,7 @@ function switchTab(tab, myTasksMode) {
 }
 
 // ── TASKS HELPERS ──
-// Monday Task Status column — use index numbers (more reliable than label text)
+// Monday Task Status column -  use index numbers (more reliable than label text)
 // 0 = Working on it (Assigned), 1 = Done (In Progress), 2 = Stuck (Completed)
 const STATUS_TO_INDEX = { 'Assigned': 0, 'In Progress': 1, 'Completed': 2 };
 const INDEX_TO_STATUS = { 0: 'Assigned', 1: 'In Progress', 2: 'Completed' };
@@ -1676,7 +1676,7 @@ function formatDueDate(dateStr, status) {
 }
 
 function populateFilters() {
-  // Launch filter — only shown in My Tasks mode
+  // Launch filter -  only shown in My Tasks mode
   const launchSel = document.getElementById('filter-launch');
   if (launchSel && isMyTasksMode) {
     const currentLaunchFilter = launchSel.value;
@@ -1690,7 +1690,7 @@ function populateFilters() {
     deptSel.innerHTML = '<option value="">All Departments</option>' +
       departments.map(d => `<option value="${d.name}" ${d.name === currentDept ? 'selected' : ''}>${d.name}</option>`).join('');
   }
-  // Assignee filter — show all users with tasks in current context
+  // Assignee filter -  show all users with tasks in current context
   const sel = document.getElementById('filter-assignee');
   if (!sel) return;
   const taskPool = isMyTasksMode
@@ -1711,7 +1711,7 @@ function isTaskOverdue(task) {
   return new Date(due + 'T00:00:00') < today;
 }
 
-// Department colour palette — consistent colours per dept name
+// Department colour palette -  consistent colours per dept name
 const DEPT_COLOURS = {
   'Ecommerce':   '#7c3aed',
   'Logistics':   '#d97706',
@@ -1785,7 +1785,7 @@ function renderSidebar(taskPool) {
     </div>`;
   }
 
-  // No All Departments card — just per-dept cards
+  // No All Departments card -  just per-dept cards
   // If activeSidebarDept is null (all), no card is highlighted
   const deptCards = depts.map(d => {
     const tasks = taskPool.filter(t => (getCol(t, COLS.TASK_DEPT) || 'No Department') === d);
