@@ -319,6 +319,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
       <span class="launch-select-arrow">▾</span>
     </div>
     <button class="new-launch-btn" onclick="createNewLaunch()">+ New Launch</button>
+    <a href="how-it-works.html" style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;white-space:nowrap" title="How it works">? Help</a>
   </div>
 </div>
 
@@ -1661,15 +1662,16 @@ function setTaskView(mode) {
   renderTasks();
 }
 
-function formatDueDate(dateStr) {
+function formatDueDate(dateStr, status) {
   if (!dateStr) return null;
   const today = new Date(); today.setHours(0,0,0,0);
   const due = new Date(dateStr + 'T00:00:00');
   const diff = Math.round((due - today) / 86400000);
   const formatted = due.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-  if (diff < 0) return { text: `Overdue - ${formatted}`, cls: 'overdue' };
-  if (diff === 0) return { text: 'Due today', cls: 'today' };
+  if (diff < 0 && status !== 'Completed') return { text: `Overdue - ${formatted}`, cls: 'overdue' };
+  if (diff === 0) return { text: 'Due today', cls: status === 'Completed' ? '' : 'today' };
   if (diff === 1) return { text: 'Due tomorrow', cls: '' };
+  if (diff < 0) return { text: formatted, cls: '' }; // completed + past date = just show the date
   return { text: `Due ${formatted}`, cls: '' };
 }
 
@@ -1701,7 +1703,8 @@ function populateFilters() {
 }
 
 function isTaskOverdue(task) {
-  if (getTaskStatus(task) === 'Completed') return false;
+  const status = getTaskStatus(task);
+  if (status === 'Completed') return false;
   const due = getCol(task, COLS.TASK_DUE);
   if (!due) return false;
   const today = new Date(); today.setHours(0,0,0,0);
@@ -1870,7 +1873,7 @@ function taskCardHTML(task, showLaunch) {
 
   const statusCls = status === 'Completed' ? 'completed' : status === 'In Progress' ? 'in-progress' : 'assigned';
 
-  const dueInfo = due ? formatDueDate(due) : null;
+  const dueInfo = due ? formatDueDate(due, status) : null;
   const completedDate = getCol(task, COLS.TASK_COMPLETED);
   const completedDateStr = completedDate ? new Date(completedDate + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : null;
 
