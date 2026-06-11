@@ -137,7 +137,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 
 /* NOTES */
 .note-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.note-item{display:flex;gap:10px;padding:10px 14px;background:var(--amber-pale);border:1px solid var(--amber-border);border-left:3px solid var(--amber);border-radius:8px;font-size:13px;line-height:1.5;position:relative}
+.note-item{display:flex;gap:10px;padding:12px 14px;background:var(--amber-pale);border:1px solid var(--amber-border);border-left:3px solid var(--amber);border-radius:8px;font-size:13px;line-height:1.5;position:relative;align-items:flex-start}
 .note-item:hover .item-actions{opacity:1}
 .note-item.info{background:var(--teal-pale);border-color:#b2e8e8;border-left-color:var(--teal)}
 .note-icon{flex-shrink:0;font-size:14px;margin-top:1px}
@@ -516,7 +516,7 @@ function getCol(item, colId) {
     const p = JSON.parse(col.value);
     if (p === null) return '';
     if (colId === COLS.URL || colId === COLS.BIGCOMMERCE_URL) return p.url || '';
-    if (colId === COLS.NOTES) return p.text || '';
+    if (colId === COLS.NOTES) return p.text !== undefined ? p.text : (p.value || '');
     if (colId === COLS.LAUNCH_DATE) return p.date || '';
     if (colId === COLS.SEVERITY) return p.label || col.text || '';
     return col.text || '';
@@ -565,77 +565,62 @@ function closeModalOnOverlay(e) { if (e.target === document.getElementById('moda
 
 // ── LOAD ALL DATA ──
 // ── SESSION CACHE ──
-const CACHE_TTL = { launch: 2 * 60 * 1000, external: 5 * 60 * 1000 }; // 2min / 5min
+// Only cache the launch hub board (2 min) — external boards always fetch fresh
+const CACHE_TTL = { launch: 2 * 60 * 1000 };
 
 function cacheGet(key) {
+  if (key !== 'launch') return null; // only cache launch board
   try {
     const raw = sessionStorage.getItem('lhub_' + key);
     if (!raw) return null;
     const { ts, data } = JSON.parse(raw);
-    const ttl = key === 'launch' ? CACHE_TTL.launch : CACHE_TTL.external;
-    if (Date.now() - ts > ttl) { sessionStorage.removeItem('lhub_' + key); return null; }
+    if (Date.now() - ts > CACHE_TTL.launch) { sessionStorage.removeItem('lhub_' + key); return null; }
     return data;
   } catch { return null; }
 }
 
 function cacheSet(key, data) {
+  if (key !== 'launch') return; // only cache launch board
   try { sessionStorage.setItem('lhub_' + key, JSON.stringify({ ts: Date.now(), data })); } catch {}
 }
 
 function cacheBust() {
-  ['launch','shoots','graphics','video'].forEach(k => {
-    try { sessionStorage.removeItem('lhub_' + k); } catch {}
-  });
+  try { sessionStorage.removeItem('lhub_launch'); } catch {}
 }
 
 async function loadAll() {
-  // Try to serve from session cache first
-  let launchItems  = cacheGet('launch');
-  let shootItems   = cacheGet('shoots');
-  let graphicItems = cacheGet('graphics');
-  let videoItems   = cacheGet('video');
+  // Launch hub board: serve from 2-min session cache if available
+  let launchItems = cacheGet('launch');
 
-  // Fetch only what's missing/stale -  in parallel
-  const toFetch = [];
-  if (!launchItems)  toFetch.push('launch');
-  if (!shootItems)   toFetch.push('shoots');
-  if (!graphicItems) toFetch.push('graphics');
-  if (!videoItems)   toFetch.push('video');
+  // External boards always fetch fresh — changes in source boards appear immediately
+  const externalFetches = [
+    mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`),
+    mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
+    mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`)
+  ];
+  if (!launchItems) {
+    externalFetches.push(mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`));
+  }
 
-  if (toFetch.length) {
-    const queries = toFetch.map(k => {
-      if (k === 'launch')   return mondayQuery(`{ boards(ids: [${BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`);
-      if (k === 'shoots')   return mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`);
-      if (k === 'graphics') return mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`);
-      if (k === 'video')    return mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`);
-    });
-    const results = await Promise.all(queries);
+  const results = await Promise.all(externalFetches);
+  const [shootData, graphicsData, videoData] = results;
 
-    toFetch.forEach((k, idx) => {
-      const res = results[idx];
-      if (k === 'launch')   { launchItems  = res.boards[0].items_page.items; cacheSet('launch', launchItems); }
-      if (k === 'shoots')   { shootItems   = res.boards[0].items_page.items; cacheSet('shoots', shootItems); }
-      if (k === 'graphics') { graphicItems = res.boards[0].items_page.items; cacheSet('graphics', graphicItems); }
-      if (k === 'video') {
-        const page1 = res.boards[0].items_page;
-        videoItems = page1.items;
-        if (page1.cursor) {
-          // Fetch page 2 async -  update cache when done
-          mondayQuery(`{ next_items_page(limit: 500, cursor: "${page1.cursor}") { cursor items { id name group { id } column_values { id value text } } } }`)
-            .then(vp2 => {
-              allVideoRequests = [...videoItems, ...vp2.next_items_page.items];
-              cacheSet('video', allVideoRequests);
-            }).catch(() => {});
-        }
-        cacheSet('video', videoItems);
-      }
-    });
+  if (!launchItems && results[3]) {
+    launchItems = results[3].boards[0].items_page.items;
+    cacheSet('launch', launchItems);
   }
 
   allItems = launchItems;
-  allShoots = shootItems.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
-  allGraphicRequests = graphicItems;
-  allVideoRequests = videoItems;
+  allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
+  allGraphicRequests = graphicsData.boards[0].items_page.items;
+
+  const videoPage1 = videoData.boards[0].items_page;
+  allVideoRequests = videoPage1.items;
+  if (videoPage1.cursor) {
+    mondayQuery(`{ next_items_page(limit: 500, cursor: "${videoPage1.cursor}") { cursor items { id name group { id } column_values { id value text } } } }`)
+      .then(vp2 => { allVideoRequests = [...allVideoRequests, ...vp2.next_items_page.items]; })
+      .catch(() => {});
+  }
 
   // Load departments from Config group
   departments = allItems
@@ -1287,16 +1272,38 @@ function renderProducts() {
   </div>`;
 }
 
+function formatNoteText(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Bullet points: lines starting with - • * → render as bullet
+    .split('\n')
+    .map(line => {
+      const trimmed = line.trim();
+      if (/^[-•*]\s+/.test(trimmed)) {
+        return `<span style="display:block;padding-left:1.2em;text-indent:-1.2em">• ${trimmed.replace(/^[-•*]\s+/, '')}</span>`;
+      }
+      if (trimmed === '') return '<span style="display:block;height:0.5em"></span>';
+      return `<span style="display:block">${trimmed}</span>`;
+    })
+    .join('');
+}
 function renderNotes() {
   const items = state.notes;
   const html = items.length ? items.map(item => {
     const note = getCol(item, COLS.NOTES);
     const sev  = getCol(item, COLS.SEVERITY);
     const isInfo = sev === 'Working on it';
+    const noteHTML = formatNoteText(note);
     return `<li class="note-item${isInfo ? ' info' : ''}">
       <span class="note-icon">${isInfo ? 'ℹ️' : '⚠️'}</span>
-      <span class="note-text"><strong>${item.name}</strong>${note ? ` - ${note}` : ''}</span>
-      <div class="item-actions" style="margin-left:auto">
+      <span class="note-text">
+        <strong>${item.name}</strong>
+        ${noteHTML ? `<span style="display:block;margin-top:4px;font-weight:400">${noteHTML}</span>` : ''}
+      </span>
+      <div class="item-actions" style="margin-left:auto;align-self:flex-start">
         <button class="btn-edit" onclick="editNoteItem('${item.id}')">Edit</button>
         <button class="btn-delete" onclick="confirmDelete('${item.id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
@@ -1487,7 +1494,7 @@ function noteForm(item) {
   const sev = item ? getCol(item,COLS.SEVERITY) : 'Stuck';
   return `
     <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="f-nt-n" value="${item?.name||''}" placeholder="e.g. No wool guernseys"></div>
-    <div class="form-group"><label class="form-label">Detail</label><textarea class="form-textarea" id="f-nt-t" placeholder="Additional detail...">${item ? getCol(item,COLS.NOTES) : ''}</textarea></div>
+    <div class="form-group"><label class="form-label">Detail</label><textarea class="form-textarea" id="f-nt-t" rows="6" placeholder="Add detail here. Use new lines for breaks, and start lines with - or • for bullet points.">${item ? getCol(item,COLS.NOTES) : ''}</textarea><p style="font-size:11px;color:var(--text-light);margin-top:4px">Start a line with - or • to create a bullet point. Press Enter for a new line.</p></div>
     <div class="form-group"><label class="form-label">Type</label>
       <select class="form-select" id="f-nt-s">
         <option value="Stuck" ${sev==='Stuck'?'selected':''}>⚠️ Warning</option>
@@ -2227,9 +2234,6 @@ async function init() {
         allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
         allGraphicRequests = graphicsData.boards[0].items_page.items;
         allVideoRequests = videoData.boards[0].items_page.items;
-        cacheSet('shoots', shootData.boards[0].items_page.items);
-        cacheSet('graphics', allGraphicRequests);
-        cacheSet('video', allVideoRequests);
         render();
       } catch {}
     }, 60000);
