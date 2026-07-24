@@ -54,7 +54,12 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .status-pill.pending{background:var(--amber-pale);color:#92670a}
 .shoot-link{font-size:10px;color:var(--teal);text-decoration:none;font-weight:600;flex-shrink:0;align-self:center}
 .shoot-link:hover{text-decoration:underline}
-.graphic-req-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.completed-task-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.completed-task-row:last-child{border-bottom:none}
+.completed-task-name{flex:1;font-size:13px;color:var(--text);font-weight:500}
+.completed-task-meta{display:flex;gap:10px;align-items:center;flex-shrink:0}
+.completed-dept-group{background:#fafbfc;border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.completed-dept-header{margin-bottom:8px;display:flex;align-items:center}
 .graphic-req-row:last-child{border-bottom:none;padding-bottom:0}
 .graphic-req-name{font-size:13px;font-weight:600;color:var(--text);min-width:160px;flex-shrink:0}
 .graphic-req-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:11px;color:var(--text-mid);flex:1}
@@ -639,9 +644,27 @@ async function loadAll() {
 // ── POPULATE SELECTOR ──
 function populateSelector() {
   const sel = document.getElementById('launch-select');
-  sel.innerHTML = launches.length
-    ? launches.map(l => `<option value="${l}"${l === currentLaunch ? ' selected' : ''}>${l}</option>`).join('')
-    : `<option value="">No launches yet</option>`;
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Only show upcoming + live launches in the dropdown
+  const upcomingLaunches = launches.filter(l => {
+    const infoItem = allItems.find(i =>
+      i.group.id === GROUPS.LAUNCH_INFO && getCol(i, COLS.LAUNCH) === l
+    );
+    if (!infoItem) return true; // no date set — include it
+    const dateStr = getCol(infoItem, COLS.LAUNCH_DATE);
+    if (!dateStr) return true; // no date — include it
+    return new Date(dateStr + 'T00:00:00') >= today;
+  });
+
+  // Always include current launch even if it's past (so it still renders correctly)
+  const toShow = upcomingLaunches.includes(currentLaunch)
+    ? upcomingLaunches
+    : [currentLaunch, ...upcomingLaunches].filter(Boolean);
+
+  sel.innerHTML = toShow.length
+    ? toShow.map(l => `<option value="${l}"${l === currentLaunch ? ' selected' : ''}>${l}</option>`).join('')
+    : `<option value="">No upcoming launches</option>`;
 }
 
 // ── FILTER STATE FOR CURRENT LAUNCH ──
@@ -759,7 +782,7 @@ function render() {
   }
 
   document.getElementById('content').innerHTML =
-    renderTimeline() + renderShoots() + renderGraphicRequests() + renderResources() + renderProducts() + renderNotes();
+    renderTimeline() + renderShoots() + renderGraphicRequests() + renderResources() + renderProducts() + renderNotes() + renderCompletedTasks();
 }
 
 // ── RENDER SECTIONS ──
@@ -800,6 +823,13 @@ function renderTimeline() {
     byDate[d].push(shoot);
   });
 
+  // Merge completed tasks (by completed date) as read-only green timeline entries
+  state.tasks.filter(t => getTaskStatus(t) === 'Completed' && getCol(t, COLS.TASK_COMPLETED)).forEach(task => {
+    const d = getCol(task, COLS.TASK_COMPLETED);
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push({ _isCompletedTask: true, id: task.id, name: task.name, _dept: getCol(task, COLS.TASK_DEPT) });
+  });
+
   // Sort date keys chronologically
   const sortedDates = Object.keys(byDate).sort((a, b) => {
     if (a === 'No date set') return 1;
@@ -822,6 +852,17 @@ function renderTimeline() {
                 ${meta ? `<span style="color:var(--text-mid);font-size:11px;display:block;margin-top:2px">${meta}</span>` : ''}
               </span>
               <a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" style="color:var(--teal);font-size:10px;font-weight:600;text-decoration:none;flex-shrink:0;align-self:center">View ↗</a>
+            </li>`;
+          }
+          if (item._isCompletedTask) {
+            const colour = getDeptColour(item._dept);
+            return `<li class="task-item" style="opacity:.85">
+              <span style="color:var(--green);font-size:13px;flex-shrink:0">✓</span>
+              <span class="task-text">
+                ${item.name}
+                ${item._dept ? `<span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;background:${colour}18;color:${colour};margin-left:5px">${item._dept}</span>` : ''}
+                <span style="font-size:10px;color:var(--text-light);margin-left:4px">Completed</span>
+              </span>
             </li>`;
           }
           const time  = getCol(item, COLS.LAUNCH_TIME);
@@ -1269,6 +1310,65 @@ function renderProducts() {
   return `<div class="card">
     <div class="card-header"><span class="card-icon">👕</span><span class="card-title">Full Product Assortment</span><button class="card-add-btn" onclick="addProductItem()">+ Add Product</button></div>
     <div class="card-body"><div class="product-grid">${cardsHTML}</div></div>
+  </div>`;
+}
+
+function renderCompletedTasks() {
+  const completed = state.tasks
+    .filter(t => getTaskStatus(t) === 'Completed')
+    .sort((a, b) => (getCol(b, COLS.TASK_COMPLETED) || '').localeCompare(getCol(a, COLS.TASK_COMPLETED) || ''));
+
+  if (!completed.length) return '';
+
+  // Group by department
+  const byDept = {};
+  completed.forEach(t => {
+    const d = getCol(t, COLS.TASK_DEPT) || 'No Department';
+    if (!byDept[d]) byDept[d] = [];
+    byDept[d].push(t);
+  });
+
+  const deptOrder = departments.map(d => d.name);
+  const deptKeys = [...deptOrder.filter(d => byDept[d]), ...Object.keys(byDept).filter(d => !deptOrder.includes(d))];
+
+  const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+  const html = deptKeys.map(dept => {
+    const colour = getDeptColour(dept);
+    const tasks = byDept[dept];
+    const rows = tasks.map(t => {
+      const completedDate = getCol(t, COLS.TASK_COMPLETED);
+      const assigneeIds = getTaskAssigneeIds(t);
+      const assignees = assigneeIds.map(id => getUserById(id)).filter(Boolean);
+      return `<div class="completed-task-row">
+        <span style="color:var(--green);font-size:13px;flex-shrink:0">✓</span>
+        <span class="completed-task-name">${t.name}</span>
+        <span class="completed-task-meta">
+          ${completedDate ? `<span style="color:var(--text-light);font-size:11px">${fmtDate(completedDate)}</span>` : ''}
+          ${assignees.length ? `<span style="font-size:11px;color:var(--text-mid)">${assignees.map(u => u.name.split(' ')[0]).join(', ')}</span>` : ''}
+        </span>
+      </div>`;
+    }).join('');
+
+    return `<div class="completed-dept-group">
+      <div class="completed-dept-header">
+        <span style="display:inline-block;width:4px;height:14px;border-radius:4px;background:${colour};margin-right:7px;vertical-align:middle"></span>
+        <span style="font-size:11px;font-weight:700;color:${colour}">${dept}</span>
+        <span style="font-size:10px;color:var(--text-light);margin-left:6px">${tasks.length} task${tasks.length !== 1 ? 's' : ''}</span>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  return `<div class="card">
+    <div class="card-header">
+      <span class="card-icon">✅</span>
+      <span class="card-title">Completed Tasks</span>
+      <span style="font-size:11px;color:var(--text-light);margin-left:8px">${completed.length} task${completed.length !== 1 ? 's' : ''} done</span>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:16px">${html}</div>
+    </div>
   </div>`;
 }
 
