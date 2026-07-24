@@ -54,7 +54,25 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .status-pill.pending{background:var(--amber-pale);color:#92670a}
 .shoot-link{font-size:10px;color:var(--teal);text-decoration:none;font-weight:600;flex-shrink:0;align-self:center}
 .shoot-link:hover{text-decoration:underline}
-.completed-task-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.stock-toggle-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border);margin-top:4px}
+.stock-toggle-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-mid);cursor:pointer;user-select:none}
+.stock-view-toggle{display:flex;background:#f0f2f5;border-radius:7px;padding:2px;gap:2px}
+.stock-view-btn{background:none;border:none;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
+.stock-view-btn.active{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.stock-refresh-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text-light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
+.stock-refresh-btn:hover{border-color:var(--teal);color:var(--teal)}
+.stock-row{margin-top:6px;display:flex;align-items:center;gap:6px}
+.stock-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)}
+.stock-total{justify-content:space-between}
+.stock-loading{font-size:10px;color:var(--text-light);font-style:italic}
+.stock-error{font-size:10px;color:var(--red);opacity:.7}
+.stock-value{font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px}
+.stock-ok{background:var(--green-pale);color:#065f46}
+.stock-low{background:var(--amber-pale);color:#92400e}
+.stock-zero{background:var(--red-pale);color:var(--red)}
+.stock-location-grid{display:flex;flex-direction:column;gap:3px;margin-top:6px;background:#f8f9fb;border-radius:7px;padding:6px 8px}
+.stock-loc-item{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stock-loc-name{font-size:10px;color:var(--text-light);font-weight:500}
 .completed-task-row:last-child{border-bottom:none}
 .completed-task-name{flex:1;font-size:13px;color:var(--text);font-weight:500}
 .completed-task-meta{display:flex;gap:10px;align-items:center;flex-shrink:0}
@@ -454,6 +472,9 @@ let linkedGraphicIds = [];
 let linkedVideoIds = [];
 let allGraphicRequests = [];
 let allVideoRequests = [];
+let stockData = {};          // { productName: { stockByOutlet, totalStock, loading, error } }
+let stockViewMode = 'total'; // 'total' or 'location'
+let showStock = false;
 let currentTab = 'hub';
 let taskViewMode = 'date';
 let isMyTasksMode = false;
@@ -491,7 +512,6 @@ async function createItem(groupId, name, colVals) {
   const vals = JSON.stringify(JSON.stringify(colVals));
   const q = `mutation { create_item(board_id: ${BOARD_ID}, group_id: "${groupId}", item_name: ${JSON.stringify(name)}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
   const result = (await mondayQuery(q)).create_item;
-  cacheSet('launch', allItems); // update launch cache with current in-memory state
   return result;
 }
 
@@ -499,18 +519,17 @@ async function updateItem(itemId, colVals) {
   const vals = JSON.stringify(JSON.stringify(colVals));
   const q = `mutation { change_multiple_column_values(board_id: ${BOARD_ID}, item_id: ${itemId}, column_values: ${vals}) { id name group { id } column_values { id value text } } }`;
   const result = (await mondayQuery(q)).change_multiple_column_values;
-  cacheSet('launch', allItems); // update cache with current in-memory state
+  // Cache is updated by the caller after applying result to allItems
   return result;
 }
 
 async function updateName(itemId, name) {
   await mondayQuery(`mutation { change_item_name(board_id: ${BOARD_ID}, item_id: ${itemId}, value: ${JSON.stringify(name)}) { id } }`);
-  cacheSet('launch', allItems);
 }
 
 async function deleteItem(itemId) {
   await mondayQuery(`mutation { delete_item(item_id: ${itemId}) { id } }`);
-  cacheSet('launch', allItems);
+  cacheBust(); // always force fresh fetch after delete
 }
 
 // ── HELPERS ──
@@ -702,6 +721,8 @@ function filterState() {
 function switchLaunch(name) {
   currentLaunch = name;
   activeSidebarDept = null;
+  stockData = {};
+  showStock = false;
   filterState();
   render();
 }
@@ -1288,6 +1309,85 @@ function renderResources() {
   </div>`;
 }
 
+// ── STOCK LOOKUP ──
+const PROXY = LAUNCH_HUB_CONFIG.STOCK_PROXY;
+
+async function fetchStockForProduct(name) {
+  if (!name) return null;
+  try {
+    const res = await fetch(`${PROXY}/api/stock?q=${encodeURIComponent(name)}`);
+    const data = await res.json();
+    if (data.error) return { error: data.error };
+    // Find best match by name
+    const match = (data.products || []).find(p =>
+      p.name.toLowerCase() === name.toLowerCase()
+    ) || data.products?.[0];
+    if (!match) return { error: 'Not found in Lightspeed' };
+    return { stockByOutlet: match.stockByOutlet, totalStock: match.totalStock };
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+async function loadAllStock() {
+  if (!showStock || !state.products.length) return;
+  // Fetch stock for all products in parallel, update stockData as each resolves
+  await Promise.all(state.products.map(async item => {
+    if (stockData[item.id]) return; // already loaded
+    stockData[item.id] = { loading: true };
+    renderProducts(); // show loading state immediately
+    const result = await fetchStockForProduct(item.name);
+    stockData[item.id] = result || { error: 'No data' };
+    renderProducts(); // update with real data
+  }));
+}
+
+function toggleStock(enabled) {
+  showStock = enabled;
+  if (enabled) {
+    stockData = {}; // clear cache so fresh fetch
+    loadAllStock();
+  } else {
+    renderProducts();
+  }
+}
+
+function toggleStockView(mode) {
+  stockViewMode = mode;
+  renderProducts();
+}
+
+function stockHTML(itemId) {
+  if (!showStock) return '';
+  const s = stockData[itemId];
+  if (!s) return `<div class="stock-row"><span class="stock-loading">Fetching stock...</span></div>`;
+  if (s.loading) return `<div class="stock-row"><span class="stock-loading">Fetching stock...</span></div>`;
+  if (s.error) return `<div class="stock-row"><span class="stock-error">Stock unavailable</span></div>`;
+
+  const outlets = Object.keys(LAUNCH_HUB_CONFIG.OUTLETS);
+
+  if (stockViewMode === 'total') {
+    const cls = s.totalStock === 0 ? 'stock-zero' : s.totalStock < 5 ? 'stock-low' : 'stock-ok';
+    return `<div class="stock-row stock-total">
+      <span class="stock-label">Stock</span>
+      <span class="stock-value ${cls}">${s.totalStock} total</span>
+    </div>`;
+  }
+
+  // By location
+  return `<div class="stock-location-grid">
+    ${outlets.map(outlet => {
+      const qty = s.stockByOutlet?.[outlet] ?? 0;
+      const cls = qty === 0 ? 'stock-zero' : qty < 5 ? 'stock-low' : 'stock-ok';
+      const shortName = outlet.replace('Port Store ', '');
+      return `<div class="stock-loc-item">
+        <span class="stock-loc-name">${shortName}</span>
+        <span class="stock-value ${cls}">${qty}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
 function renderProducts() {
   const items = state.products;
   const cardsHTML = items.length ? items.map(item => {
@@ -1304,11 +1404,27 @@ function renderProducts() {
       <div class="product-info">
         <div class="product-name">${item.name}</div>
         ${url ? `<button class="product-copy-btn" onclick="copyLink(this,'${url}')">Copy Product Link</button>` : `<span style="color:var(--text-light);font-size:11px">No URL set</span>`}
+        ${stockHTML(item.id)}
       </div>
     </div>`;
   }).join('') : `<div class="empty-state">No products yet - add your first product above</div>`;
+
+  // Stock toggle controls
+  const stockControls = `<div class="stock-toggle-bar">
+    <label class="stock-toggle-label">
+      <input type="checkbox" id="stock-checkbox" ${showStock ? 'checked' : ''} onchange="toggleStock(this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer">
+      <span>Show stock levels</span>
+    </label>
+    ${showStock ? `<div class="stock-view-toggle">
+      <button class="stock-view-btn ${stockViewMode === 'total' ? 'active' : ''}" onclick="toggleStockView('total')">Total</button>
+      <button class="stock-view-btn ${stockViewMode === 'location' ? 'active' : ''}" onclick="toggleStockView('location')">By Location</button>
+    </div>` : ''}
+    ${showStock ? `<button class="stock-refresh-btn" onclick="stockData={};loadAllStock()" title="Refresh stock">↻ Refresh</button>` : ''}
+  </div>`;
+
   return `<div class="card">
     <div class="card-header"><span class="card-icon">👕</span><span class="card-title">Full Product Assortment</span><button class="card-add-btn" onclick="addProductItem()">+ Add Product</button></div>
+    <div style="padding:0 18px 12px">${stockControls}</div>
     <div class="card-body"><div class="product-grid">${cardsHTML}</div></div>
   </div>`;
 }
@@ -1479,6 +1595,7 @@ async function saveItem(id, section, groupId, name, colVals) {
     state[section].push(created);
     allItems.push(created);
   }
+  cacheSet('launch', allItems); // cache after allItems is fully updated
 }
 
 // ── TIMELINE CRUD ──
@@ -2038,6 +2155,7 @@ async function handleStatusChange(id, newStatus) {
       task.column_values = updated.column_values;
       const gi = allItems.findIndex(i => i.id === id);
       if (gi > -1) allItems[gi].column_values = updated.column_values;
+      cacheSet('launch', allItems);
       renderTasks(); toast(`Marked ${newStatus}`, 'success');
     } catch(e) { toast('Error: ' + e.message, 'error'); renderTasks(); }
   }
@@ -2068,6 +2186,7 @@ async function cycleTaskStatus(id, forceNext) {
     task.column_values = updated.column_values;
     const gi = allItems.findIndex(i => i.id === id);
     if (gi > -1) allItems[gi].column_values = updated.column_values;
+    cacheSet('launch', allItems);
     renderTasks(); toast(`Marked ${next}`, 'success');
   } catch(e) { toast('Error: ' + e.message, 'error'); }
 }
@@ -2085,6 +2204,7 @@ async function doMarkComplete(id, completedDate) {
     if (task) task.column_values = updated.column_values;
     const gi = allItems.findIndex(i => i.id === id);
     if (gi > -1) allItems[gi].column_values = updated.column_values;
+    cacheSet('launch', allItems);
     renderTasks(); closeModal(); toast('Marked Completed', 'success');
   } catch(e) { toast('Error: ' + e.message, 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Mark Completed'; } }
 }
