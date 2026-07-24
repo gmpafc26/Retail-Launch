@@ -1285,6 +1285,31 @@ function renderResources() {
   </div>`;
 }
 
+function renderProducts() {
+  const items = state.products;
+  const cardsHTML = items.length ? items.map(item => {
+    const url = getCol(item, COLS.BIGCOMMERCE_URL);
+    const img = getCol(item, COLS.URL);
+    return `<div class="product-card">
+      <div class="product-card-actions">
+        <button class="btn-edit" onclick="editProductItem('${item.id}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('${item.id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+      <div class="product-img-wrap">
+        ${img ? `<img src="${img}" alt="${item.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'product-img-placeholder\\'>👕</div>'">` : `<div class="product-img-placeholder">👕</div>`}
+      </div>
+      <div class="product-info">
+        <div class="product-name">${item.name}</div>
+        ${url ? `<button class="product-copy-btn" onclick="copyLink(this,'${url}')">Copy Product Link</button>` : `<span style="color:var(--text-light);font-size:11px">No URL set</span>`}
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-state">No products yet - add your first product above</div>`;
+  return `<div class="card">
+    <div class="card-header"><span class="card-icon">👕</span><span class="card-title">Full Product Assortment</span><button class="card-add-btn" onclick="addProductItem()">+ Add Product</button></div>
+    <div class="card-body"><div class="product-grid">${cardsHTML}</div></div>
+  </div>`;
+}
+
 function previewProductImage(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1315,7 +1340,7 @@ function prodForm(item) {
       <p style="font-size:11px;color:var(--text-light);margin-top:4px">JPG, PNG or WebP. Square crop recommended. Max ~800KB for best performance.</p>
     </div>`;
 }
-function addProductItem() { openModal('Add Product', prodForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`); setTimeout(()=>document.getElementById('f-p-search')?.focus(),50); }
+function addProductItem() { openModal('Add Product', prodForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`); setTimeout(()=>document.getElementById('f-p-n')?.focus(),50); }
 function editProductItem(id) { const item = state.products.find(i=>i.id===id); openModal('Edit Product', prodForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem('${id}')">Save</button>`); }
 async function saveProductItem(id) {
   const name    = document.getElementById('f-p-n').value.trim();
