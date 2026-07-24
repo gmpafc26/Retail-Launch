@@ -54,7 +54,12 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .status-pill.pending{background:var(--amber-pale);color:#92670a}
 .shoot-link{font-size:10px;color:var(--teal);text-decoration:none;font-weight:600;flex-shrink:0;align-self:center}
 .shoot-link:hover{text-decoration:underline}
-.stock-toggle-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border);margin-top:4px}
+.prod-search-dropdown{position:absolute;top:calc(100% + 3px);left:0;right:0;background:#fff;border:1.5px solid var(--teal);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;max-height:220px;overflow-y:auto}
+.prod-search-result{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.prod-search-result:last-child{border-bottom:none}
+.prod-search-result:hover{background:var(--teal-pale)}
+.prod-search-name{font-size:13px;color:var(--text);font-weight:500;flex:1}
+.prod-search-sku{font-size:10px;color:var(--text-light);background:#f0f2f5;padding:1px 6px;border-radius:20px;flex-shrink:0}
 .stock-toggle-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-mid);cursor:pointer;user-select:none}
 .stock-view-toggle{display:flex;background:#f0f2f5;border-radius:7px;padding:2px;gap:2px}
 .stock-view-btn{background:none;border:none;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
@@ -1657,14 +1662,78 @@ function previewProductImage(input) {
   fname.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + 'KB)';
 }
 
+// ── PRODUCT SEARCH ──
+let productSearchTimeout = null;
+
+async function searchLightspeedProducts(query) {
+  const resultsEl = document.getElementById('f-p-search-results');
+  if (!resultsEl) return;
+  if (query.length < 2) { resultsEl.style.display = 'none'; return; }
+  resultsEl.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--text-light)">Searching...</div>';
+  resultsEl.style.display = 'block';
+  try {
+    const res = await fetch(`${PROXY}/api/search?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    const products = data.products || [];
+    if (!products.length) {
+      resultsEl.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--text-light)">No products found</div>';
+      return;
+    }
+    resultsEl.innerHTML = products.map(p => `
+      <div class="prod-search-result" onclick="selectLightspeedProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+        <span class="prod-search-name">${p.name}</span>
+        ${p.sku ? `<span class="prod-search-sku">${p.sku}</span>` : ''}
+      </div>`).join('');
+  } catch(e) {
+    resultsEl.innerHTML = `<div style="padding:8px 12px;font-size:12px;color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+function selectLightspeedProduct(product) {
+  const nameEl = document.getElementById('f-p-n');
+  const selectedEl = document.getElementById('f-p-selected');
+  const resultsEl = document.getElementById('f-p-search-results');
+  const searchEl = document.getElementById('f-p-search');
+  if (nameEl) nameEl.value = product.name;
+  if (selectedEl) {
+    selectedEl.style.display = 'flex';
+    selectedEl.querySelector('.prod-selected-name').textContent = product.name;
+    selectedEl.querySelector('.prod-selected-sku').textContent = product.sku ? 'SKU: ' + product.sku : '';
+  }
+  if (searchEl) searchEl.value = '';
+  if (resultsEl) resultsEl.style.display = 'none';
+}
+
 function prodForm(item) {
   const hasImg = item ? !!getCol(item, COLS.URL) : false;
+  const existingName = item?.name || '';
+  const isEdit = !!item;
   return `
-    <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="f-p-n" value="${item?.name||''}" placeholder="e.g. PA Macron 2026 Prison Bar Guernsey - Adult"></div>
+    <div class="form-group">
+      <label class="form-label">Product Name</label>
+      ${isEdit
+        ? `<input class="form-input" id="f-p-n" value="${existingName}" placeholder="Product name">`
+        : `<div style="position:relative">
+            <input class="form-input" id="f-p-search" placeholder="Search Lightspeed e.g. Pear Range Tee..." autocomplete="off"
+              oninput="clearTimeout(productSearchTimeout);productSearchTimeout=setTimeout(()=>searchLightspeedProducts(this.value),350)"
+              onfocus="if(this.value.length>=2)searchLightspeedProducts(this.value)">
+            <div id="f-p-search-results" class="prod-search-dropdown" style="display:none"></div>
+          </div>
+          <input type="hidden" id="f-p-n" value="">
+          <div id="f-p-selected" style="display:none;align-items:center;gap:8px;margin-top:8px;background:var(--teal-pale);border:1px solid #b2e8e8;border-radius:8px;padding:8px 12px">
+            <span style="color:var(--teal);font-size:14px">✓</span>
+            <div>
+              <div class="prod-selected-name" style="font-size:13px;font-weight:600;color:var(--navy)"></div>
+              <div class="prod-selected-sku" style="font-size:11px;color:var(--text-light)"></div>
+            </div>
+            <button type="button" onclick="document.getElementById('f-p-n').value='';document.getElementById('f-p-selected').style.display='none';document.getElementById('f-p-search').value='';document.getElementById('f-p-search').focus()" style="margin-left:auto;background:none;border:none;color:var(--text-light);cursor:pointer;font-size:12px">✕ Clear</button>
+          </div>`
+      }
+    </div>
     <div class="form-group"><label class="form-label">Port Store URL</label><input class="form-input" id="f-p-u" value="${item ? getCol(item,COLS.BIGCOMMERCE_URL) : ''}" placeholder="https://portstore.com.au/..."></div>
     <div class="form-group">
       <label class="form-label">Product Image</label>
-      ${hasImg ? '<p style="font-size:11px;color:var(--green);margin-bottom:6px">✓ Image uploaded -  choose a new file to replace it</p>' : ''}
+      ${hasImg ? '<p style="font-size:11px;color:var(--green);margin-bottom:6px">✓ Image uploaded - choose a new file to replace it</p>' : ''}
       <input type="file" id="f-p-img-file" accept="image/*" style="display:none" onchange="previewProductImage(this)">
       <button type="button" class="form-input" style="text-align:left;cursor:pointer;color:var(--text-mid)" onclick="document.getElementById('f-p-img-file').click()">
         📁 ${hasImg ? 'Replace image...' : 'Choose image file...'}
@@ -1676,7 +1745,7 @@ function prodForm(item) {
       <p style="font-size:11px;color:var(--text-light);margin-top:4px">JPG, PNG or WebP. Square crop recommended. Max ~800KB for best performance.</p>
     </div>`;
 }
-function addProductItem() { openModal('Add Product', prodForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`); }
+function addProductItem() { openModal('Add Product', prodForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem(null)">Add Product</button>`); setTimeout(()=>document.getElementById('f-p-search')?.focus(),50); }
 function editProductItem(id) { const item = state.products.find(i=>i.id===id); openModal('Edit Product', prodForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','products','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveProductItem('${id}')">Save</button>`); }
 async function saveProductItem(id) {
   const name    = document.getElementById('f-p-n').value.trim();
