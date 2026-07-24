@@ -64,11 +64,5 @@ const LAUNCH_HUB_CONFIG = {
     PRODUCT_IMAGE:    "long_text_mm41tk4s",
     LINKED_GRAPHICS:  "long_text_mm41rah",
     LINKED_VIDEO:     "long_text_mm41ac39"
-  },
-  STOCK_PROXY: "https://pafc-lightspeed-proxy-georgies-projects-5bae318d.vercel.app",
-  OUTLETS: {
-    "Port Store Online":  "06a3b11e-2277-11f0-ecdc-9806444e02ef",
-    "Port Store Alberton":"023c72a6-e908-11eb-e2fd-35f2a1494d40",
-    "Port Store Venue":   "06a3b11e-2277-11f1-ecdc-1b6a8ce0fd7b"
   }
 };
