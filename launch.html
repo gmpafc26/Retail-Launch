@@ -721,8 +721,8 @@ async function saveNewLaunch() {
   const name = document.getElementById('f-new-launch').value.trim();
   const date = document.getElementById('f-new-date').value;
   const time = document.getElementById('f-new-time').value.trim();
-  if (!name) { alert('Launch name is required'); return; }
-  if (launches.includes(name)) { alert('A launch with this name already exists'); return; }
+  if (!name) { toast('Launch name is required', 'error'); return; }
+  if (launches.includes(name)) { toast('A launch with this name already exists', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary');
   btn.disabled = true; btn.textContent = 'Creating...';
   try {
@@ -1328,7 +1328,7 @@ async function saveTimelineItem(id) {
   const date  = document.getElementById('f-tl-d').value;
   const owner = document.getElementById('f-tl-o').value.trim();
   const notes = document.getElementById('f-tl-t').value.trim();
-  if (!name) { alert('Name required'); return; }
+  if (!name) { toast('Name is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
     await saveItem(id, 'timeline', GROUPS.TIMELINE, name, {
@@ -1364,7 +1364,7 @@ async function saveResourceItem(id) {
   const url   = document.getElementById('f-r-u').value.trim();
   const notes = document.getElementById('f-r-notes').value.trim();
   const type  = document.getElementById('f-r-type').value;
-  if (!name) { alert('Name required'); return; }
+  if (!name) { toast('Name is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
     await saveItem(id, 'resources', GROUPS.RESOURCES, name, {
@@ -1412,7 +1412,7 @@ async function saveProductItem(id) {
   const name    = document.getElementById('f-p-n').value.trim();
   const url     = document.getElementById('f-p-u').value.trim();
   const imgFile = document.getElementById('f-p-img-file')?.files[0];
-  if (!name) { alert('Product name required'); return; }
+  if (!name) { toast('Product name is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
     // Convert image file to base64 if one was selected
@@ -1550,7 +1550,7 @@ function addNoteItem() { openModal('Add Note', noteForm(null), `<button class="b
 function editNoteItem(id) { const item = state.notes.find(i=>i.id===id); openModal('Edit Note', noteForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveNoteItem('${id}')">Save</button>`); }
 async function saveNoteItem(id) {
   const name = document.getElementById('f-nt-n').value.trim();
-  if (!name) { alert('Title required'); return; }
+  if (!name) { toast('Title is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
     await saveItem(id,'notes',GROUPS.NOTES, name, { [COLS.NOTES]: document.getElementById('f-nt-t').value.trim(), [COLS.SEVERITY]: {label:document.getElementById('f-nt-s').value} });
@@ -2114,7 +2114,7 @@ async function saveTaskItem(id) {
   // Get selected assignees from checkboxes
   const selectedIds = Array.from(document.querySelectorAll('.assignee-cb:checked')).map(cb => cb.value);
 
-  if (!name) { alert('Task name required'); return; }
+  if (!name) { toast('Task name is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary');
   btn.disabled = true; btn.textContent = 'Saving...';
 
@@ -2207,8 +2207,17 @@ async function addDepartment() {
   } catch(e) { toast('Error: ' + e.message, 'error'); input.disabled = false; }
 }
 
+async function doDeleteDepartment(id, name) {
+  closeModal();
+  await deleteDepartment(id, name);
+}
+
 async function deleteDepartment(id, name) {
-  if (!confirm(`Remove "${name}"? Tasks using this department will keep the value but it won't appear in the list.`)) return;
+  openModal('Remove Department',
+    `<p style="font-size:13px;color:var(--text-mid)">Remove <strong>${name}</strong>? Tasks using this department will keep the value but it won't appear in the list.</p>`,
+    `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+     <button class="btn-danger" onclick="doDeleteDepartment('${id}','${name.replace(/'/g,"\\'")}')">Remove</button>`);
+  return;
   try {
     await mondayQuery(`mutation { delete_item(item_id: ${id}) { id } }`);
     departments = departments.filter(d => d.id !== id);
