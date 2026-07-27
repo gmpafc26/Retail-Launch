@@ -510,7 +510,24 @@ async function updateName(itemId, name) {
 
 async function deleteItem(itemId) {
   await mondayQuery(`mutation { delete_item(item_id: ${itemId}) { id } }`);
-  cacheBust(); // always force fresh fetch after delete
+  cacheBust();
+}
+
+async function saveItem(id, section, groupId, name, colVals) {
+  const allCols = { ...colVals, [COLS.LAUNCH]: currentLaunch };
+  if (id) {
+    const updated = await updateItem(id, allCols);
+    const item = state[section].find(i => i.id === id);
+    if (name !== item.name) await updateName(id, name);
+    item.name = name; item.column_values = updated.column_values;
+    const gi = allItems.findIndex(i => i.id === id);
+    if (gi > -1) { allItems[gi].name = name; allItems[gi].column_values = updated.column_values; }
+  } else {
+    const created = await createItem(groupId, name, allCols);
+    state[section].push(created);
+    allItems.push(created);
+  }
+  cacheSet('launch', allItems);
 }
 
 // ── HELPERS ──
