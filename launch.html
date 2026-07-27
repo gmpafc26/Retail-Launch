@@ -1313,6 +1313,69 @@ function renderProducts() {
   </div>`;
 }
 
+// ── TIMELINE CRUD ──
+function tlForm(item) {
+  return `
+    <div class="form-group"><label class="form-label">Task / Milestone</label><input class="form-input" id="f-tl-n" value="${item?.name||''}" placeholder="e.g. Product imagery due"></div>
+    <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="f-tl-d" type="date" value="${item ? getCol(item, COLS.TIMELINE_DATE) : ''}"></div>
+    <div class="form-group"><label class="form-label">Owner</label><input class="form-input" id="f-tl-o" value="${item ? getCol(item, COLS.OWNER) : ''}" placeholder="e.g. Georgie"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-tl-t" placeholder="Additional detail...">${item ? getCol(item, COLS.NOTES) : ''}</textarea></div>`;
+}
+function addTimelineItem() { openModal('Add Timeline Task', tlForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTimelineItem(null)">Add</button>`); }
+function editTimelineItem(id) { const item = state.timeline.find(i=>i.id===id); openModal('Edit Timeline Task', tlForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','timeline','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTimelineItem('${id}')">Save</button>`); }
+async function saveTimelineItem(id) {
+  const name  = document.getElementById('f-tl-n').value.trim();
+  const date  = document.getElementById('f-tl-d').value;
+  const owner = document.getElementById('f-tl-o').value.trim();
+  const notes = document.getElementById('f-tl-t').value.trim();
+  if (!name) { alert('Name required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+    await saveItem(id, 'timeline', GROUPS.TIMELINE, name, {
+      [COLS.TIMELINE_DATE]: date ? { date } : null,
+      [COLS.OWNER]: owner,
+      [COLS.NOTES]: notes ? { text: notes } : null
+    });
+    filterState(); render(); closeModal(); toast(id ? 'Updated' : 'Added', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled=false; btn.textContent='Save'; }
+}
+
+// ── RESOURCE CRUD ──
+function resForm(item) {
+  const isWebsite = !item || item.group?.id === GROUPS.RESOURCES;
+  const url    = item ? getCol(item, COLS.URL) : '';
+  const bcUrl  = item ? getCol(item, COLS.BIGCOMMERCE_URL) : '';
+  const notes  = item ? getCol(item, COLS.NOTES) : '';
+  return `
+    <div class="form-group"><label class="form-label">Link Name</label><input class="form-input" id="f-r-n" value="${item?.name||''}" placeholder="e.g. Port Store Product Page"></div>
+    <div class="form-group"><label class="form-label">URL</label><input class="form-input" id="f-r-u" value="${url}" placeholder="https://..."></div>
+    <div class="form-group"><label class="form-label">Type</label>
+      <select class="form-select" id="f-r-type">
+        <option value="website" ${!item || item.group?.id === GROUPS.RESOURCES ? 'selected':''}>Website Link</option>
+        <option value="asset" ${item && item.group?.id !== GROUPS.RESOURCES ? 'selected':''}>Asset Link (Graphics/Photography/Storytelling)</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Notes / Label</label><input class="form-input" id="f-r-notes" value="${notes}" placeholder="e.g. Not live yet"></div>`;
+}
+function addResourceItem() { openModal('Add Resource Link', resForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem(null)">Add Link</button>`); }
+function editResourceItem(id) { const item = state.resources.find(i=>i.id===id); openModal('Edit Resource Link', resForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem('${id}')">Save</button>`); }
+async function saveResourceItem(id) {
+  const name  = document.getElementById('f-r-n').value.trim();
+  const url   = document.getElementById('f-r-u').value.trim();
+  const notes = document.getElementById('f-r-notes').value.trim();
+  const type  = document.getElementById('f-r-type').value;
+  if (!name) { alert('Name required'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
+  try {
+    await saveItem(id, 'resources', GROUPS.RESOURCES, name, {
+      [COLS.URL]: url ? { url, text: name } : null,
+      [COLS.NOTES]: notes ? { text: notes } : null
+    });
+    filterState(); render(); closeModal(); toast(id ? 'Updated' : 'Added', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled=false; btn.textContent='Save'; }
+}
+
+// ── PRODUCT CRUD ──
 function previewProductImage(input) {
   const file = input.files[0];
   if (!file) return;
