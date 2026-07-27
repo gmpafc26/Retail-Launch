@@ -1432,12 +1432,26 @@ async function saveProductItem(id) {
   if (!name) { toast('Product name is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    // Convert image file to base64 if one was selected
     let imgBase64 = null;
+    // Compress image to max 400x400 and 80% quality before storing
     if (imgFile) {
       imgBase64 = await new Promise((resolve, reject) => {
+        const img = new Image();
         const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result); // data:image/...;base64,...
+        reader.onload = e => {
+          img.onload = () => {
+            const MAX = 400;
+            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.8));
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
         reader.onerror = reject;
         reader.readAsDataURL(imgFile);
       });
