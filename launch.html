@@ -1371,6 +1371,103 @@ async function saveProductItem(id) {
 }
 
 // ── NOTES CRUD ──
+function renderCompletedTasks() {
+  const completed = state.tasks
+    .filter(t => getTaskStatus(t) === 'Completed')
+    .sort((a, b) => (getCol(b, COLS.TASK_COMPLETED) || '').localeCompare(getCol(a, COLS.TASK_COMPLETED) || ''));
+
+  if (!completed.length) return '';
+
+  const byDept = {};
+  completed.forEach(t => {
+    const d = getCol(t, COLS.TASK_DEPT) || 'No Department';
+    if (!byDept[d]) byDept[d] = [];
+    byDept[d].push(t);
+  });
+
+  const deptOrder = departments.map(d => d.name);
+  const deptKeys = [...deptOrder.filter(d => byDept[d]), ...Object.keys(byDept).filter(d => !deptOrder.includes(d))];
+  const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+  const html = deptKeys.map(dept => {
+    const colour = getDeptColour(dept);
+    const tasks = byDept[dept];
+    const rows = tasks.map(t => {
+      const completedDate = getCol(t, COLS.TASK_COMPLETED);
+      const assigneeIds = getTaskAssigneeIds(t);
+      const assignees = assigneeIds.map(id => getUserById(id)).filter(Boolean);
+      return `<div class="completed-task-row">
+        <span style="color:var(--green);font-size:13px;flex-shrink:0">✓</span>
+        <span class="completed-task-name">${t.name}</span>
+        <span class="completed-task-meta">
+          ${completedDate ? `<span style="color:var(--text-light);font-size:11px">${fmtDate(completedDate)}</span>` : ''}
+          ${assignees.length ? `<span style="font-size:11px;color:var(--text-mid)">${assignees.map(u => u.name.split(' ')[0]).join(', ')}</span>` : ''}
+        </span>
+      </div>`;
+    }).join('');
+    return `<div class="completed-dept-group">
+      <div class="completed-dept-header">
+        <span style="display:inline-block;width:4px;height:14px;border-radius:4px;background:${colour};margin-right:7px;vertical-align:middle"></span>
+        <span style="font-size:11px;font-weight:700;color:${colour}">${dept}</span>
+        <span style="font-size:10px;color:var(--text-light);margin-left:6px">${tasks.length} task${tasks.length !== 1 ? 's' : ''}</span>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  return `<div class="card">
+    <div class="card-header">
+      <span class="card-icon">✅</span>
+      <span class="card-title">Completed Tasks</span>
+      <span style="font-size:11px;color:var(--text-light);margin-left:8px">${completed.length} task${completed.length !== 1 ? 's' : ''} done</span>
+    </div>
+    <div class="card-body"><div style="display:flex;flex-direction:column;gap:16px">${html}</div></div>
+  </div>`;
+}
+
+function formatNoteText(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .split('\n')
+    .map(line => {
+      const trimmed = line.trim();
+      if (/^[-•*]\s+/.test(trimmed)) {
+        return `<span style="display:block;padding-left:1.2em;text-indent:-1.2em">• ${trimmed.replace(/^[-•*]\s+/, '')}</span>`;
+      }
+      if (trimmed === '') return '<span style="display:block;height:0.5em"></span>';
+      return `<span style="display:block">${trimmed}</span>`;
+    })
+    .join('');
+}
+
+function renderNotes() {
+  const items = state.notes;
+  const html = items.length ? items.map(item => {
+    const note = getCol(item, COLS.NOTES);
+    const sev  = getCol(item, COLS.SEVERITY);
+    const isInfo = sev === 'Working on it';
+    const noteHTML = formatNoteText(note);
+    return `<li class="note-item${isInfo ? ' info' : ''}">
+      <span class="note-icon">${isInfo ? 'ℹ️' : '⚠️'}</span>
+      <span class="note-text">
+        <strong>${item.name}</strong>
+        ${noteHTML ? `<span style="display:block;margin-top:4px;font-weight:400">${noteHTML}</span>` : ''}
+      </span>
+      <div class="item-actions" style="margin-left:auto;align-self:flex-start">
+        <button class="btn-edit" onclick="editNoteItem('${item.id}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('${item.id}','notes','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </li>`;
+  }).join('') : `<div class="empty-state">No notes yet - add important notes above</div>`;
+  return `<div class="card">
+    <div class="card-header"><span class="card-icon">⚠️</span><span class="card-title">Important Notes</span><button class="card-add-btn" onclick="addNoteItem()">+ Add Note</button></div>
+    <div class="card-body"><ul class="note-list">${html}</ul></div>
+  </div>`;
+}
+
 function noteForm(item) {
   const sev = item ? getCol(item,COLS.SEVERITY) : 'Stuck';
   return `
