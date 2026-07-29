@@ -108,6 +108,48 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .monday-dot{width:6px;height:6px;background:#6161ff;border-radius:50%}
 
 @media(max-width:600px){.launches-grid{grid-template-columns:1fr}.home-header{flex-direction:column}.home-actions{width:100%}.my-tasks-btn,.new-launch-btn{flex:1;justify-content:center}}
+
+/* CALENDAR */
+.calendar-section{margin-top:36px}
+.calendar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.calendar-title{font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+.cal-nav{display:flex;align-items:center;gap:8px}
+.cal-nav-btn{background:#fff;border:1px solid var(--border);border-radius:8px;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .12s;font-family:'Inter',sans-serif}
+.cal-nav-btn:hover{border-color:var(--teal)}
+.cal-month-label{font-size:14px;font-weight:700;color:var(--navy);min-width:120px;text-align:center}
+.cal-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cal-filter-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .12s;user-select:none}
+.cal-filter-chip.active{opacity:1}
+.cal-filter-chip.inactive{opacity:.4}
+.cal-filter-launch .filter-select{font-size:11px;border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-family:'Inter',sans-serif;background:#fff;color:var(--text-mid);cursor:pointer;outline:none}
+.calendar-grid{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);background:#f8f9fb;border-bottom:1px solid var(--border)}
+.cal-weekday{padding:8px 0;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light)}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-day{min-height:80px;padding:6px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;cursor:default}
+.cal-day:nth-child(7n){border-right:none}
+.cal-day.other-month{background:#fafbfc}
+.cal-day.today .cal-day-num{background:var(--teal);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--text-mid);margin-bottom:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-events{display:flex;flex-direction:column;gap:2px}
+.cal-event{border-radius:4px;padding:2px 5px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .1s;line-height:1.4}
+.cal-event:hover{opacity:.8}
+.cal-event.launch{background:#e6f9f9;color:var(--teal-dim)}
+.cal-event.edm{background:#f3e8ff;color:#6d28d9}
+.cal-event.shoot{background:#1a1f2e;color:#fff}
+.cal-event.more{background:#f0f2f5;color:var(--text-light);cursor:default}
+/* EVENT PREVIEW MODAL */
+.event-preview{padding:4px 0}
+.event-preview-type{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.event-preview-type.launch{background:#e6f9f9;color:var(--teal-dim)}
+.event-preview-type.edm{background:#f3e8ff;color:#6d28d9}
+.event-preview-type.shoot{background:#1a1f2e;color:#fff}
+.event-preview-name{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:14px;line-height:1.3}
+.event-preview-row{display:flex;gap:8px;margin-bottom:8px;font-size:13px;color:var(--text-mid)}
+.event-preview-label{font-weight:600;color:var(--text-light);font-size:11px;text-transform:uppercase;letter-spacing:.06em;min-width:80px}
+.event-preview-val{color:var(--text)}
+.event-preview-action{margin-top:16px}
+@media(max-width:600px){.cal-day{min-height:54px;padding:4px}.cal-event{font-size:9px}}
 </style>
 </head>
 <body>
@@ -122,7 +164,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
     <img class="user-avatar" id="user-avatar" src="" alt="">
     <span class="user-name" id="user-name"></span>
   </div>
-  <a href="how-it-works.html" style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;margin-left:8px" title="How it works">? Help</a>
+  <a href="how-it-works.html" style="font-size:12px;font-weight:600;color:var(--navy);background:#fff;border:none;border-radius:8px;padding:7px 14px;text-decoration:none;white-space:nowrap;flex-shrink:0">How it works</a>
 </div>
 
 <div class="page">
@@ -142,6 +184,38 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
   <div id="home-content">
     <div class="loading-state"><div class="loading-spinner"></div><div>Loading launches...</div></div>
   </div>
+
+  <div id="calendar-section" class="calendar-section" style="display:none">
+    <div class="calendar-header">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span class="calendar-title">📆 Calendar</span>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+          <span class="cal-month-label" id="cal-month-label"></span>
+          <button class="cal-nav-btn" onclick="calNext()">›</button>
+        </div>
+      </div>
+      <div class="cal-filters">
+        <span style="font-size:11px;font-weight:600;color:var(--text-light)">Show:</span>
+        <span class="cal-filter-chip active launch" id="fchip-launch" onclick="toggleCalFilter('launch')" style="background:#e6f9f9;color:var(--teal-dim);border-color:#b2e8e8">🚀 Launches</span>
+        <span class="cal-filter-chip active edm" id="fchip-edm" onclick="toggleCalFilter('edm')" style="background:#f3e8ff;color:#6d28d9;border-color:#d8b4fe">📧 EDMs</span>
+        <span class="cal-filter-chip active shoot" id="fchip-shoot" onclick="toggleCalFilter('shoot')" style="background:#1a1f2e;color:#fff;border-color:#1a1f2e">📸 Shoots</span>
+        <div class="cal-filter-launch">
+          <select id="cal-filter-launch" onchange="renderCalendar()" style="font-size:11px;border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-family:'Inter',sans-serif;background:#fff;color:var(--text-mid);cursor:pointer;outline:none">
+            <option value="">All Launches</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="calendar-grid">
+      <div class="cal-weekdays">
+        <div class="cal-weekday">Mon</div><div class="cal-weekday">Tue</div><div class="cal-weekday">Wed</div>
+        <div class="cal-weekday">Thu</div><div class="cal-weekday">Fri</div><div class="cal-weekday">Sat</div><div class="cal-weekday">Sun</div>
+      </div>
+      <div class="cal-days" id="cal-days"></div>
+    </div>
+  </div>
+
 </div>
 
 <div class="page-footer">
@@ -400,8 +474,8 @@ async function createLaunch() {
   const name = document.getElementById('f-name').value.trim();
   const date = document.getElementById('f-date').value;
   const time = document.getElementById('f-time').value.trim();
-  if (!name) { alert('Launch name is required'); return; }
-  if (allLaunchData.find(l => l.name === name)) { alert('A launch with this name already exists'); return; }
+  if (!name) { toast('Launch name is required', 'error'); return; }
+  if (allLaunchData.find(l => l.name === name)) { toast('A launch with this name already exists', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary');
   btn.disabled = true; btn.textContent = 'Creating...';
   try {
@@ -418,12 +492,215 @@ async function createLaunch() {
   } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Create Launch'; }
 }
 
+// ── CALENDAR STATE ──
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+let calFilters = { launch: true, edm: true, shoot: true };
+let allEdms   = [];  // Port Store EDMs from EDM board
+let allShoots = [];  // shoots from ASA Hub
+let edmCols   = {};  // discovered column IDs
+
+// ── EDM BOARD FETCH ──
+async function loadCalendarData() {
+  try {
+    // Fetch EDM board - discover columns on first load
+    const edmData = await mondayQuery(`{
+      boards(ids: [${LAUNCH_HUB_CONFIG.EDM_BOARD_ID}]) {
+        columns { id title type }
+        items_page(limit: 500) {
+          items { id name column_values { id value text } }
+        }
+      }
+    }`);
+    const board = edmData.boards[0];
+    // Discover column IDs by title keywords
+    board.columns.forEach(c => {
+      const t = c.title.toLowerCase();
+      if (t.includes('send') && c.type === 'date') edmCols.sendDate = c.id;
+      else if (t.includes('date') && c.type === 'date' && !edmCols.sendDate) edmCols.sendDate = c.id;
+      if (t.includes('subject') || t.includes('name') || t.includes('email name')) edmCols.subject = c.id;
+      if (t.includes('status')) edmCols.status = c.id;
+      if (t.includes('department') || t.includes('dept') || t.includes('team') || t.includes('brand')) edmCols.dept = c.id;
+      if (t.includes('audience') || t.includes('segment') || t.includes('list')) edmCols.audience = c.id;
+    });
+
+    // Filter to Port Store department
+    allEdms = board.items_page.items.filter(item => {
+      if (!edmCols.dept) return true; // no dept col found, show all
+      const dept = getCol(item, edmCols.dept);
+      return dept && dept.toLowerCase().includes('port store');
+    }).map(item => ({
+      id: item.id,
+      name: item.name,
+      date: edmCols.sendDate ? getCol(item, edmCols.sendDate) : '',
+      subject: edmCols.subject ? getCol(item, edmCols.subject) : item.name,
+      status: edmCols.status ? getCol(item, edmCols.status) : '',
+      type: 'edm'
+    })).filter(e => e.date);
+
+    // Fetch ASA Hub shoots
+    const shootData = await mondayQuery(`{
+      boards(ids: [${LAUNCH_HUB_CONFIG.SHOOT_BOARD_ID}]) {
+        items_page(limit: 200) {
+          items { id name group { id } column_values { id value text } }
+        }
+      }
+    }`);
+    allShoots = shootData.boards[0].items_page.items
+      .filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS)
+      .map(item => {
+        const dateCol = item.column_values.find(c => c.id === LAUNCH_HUB_CONFIG.SHOOT_COLS.DATE);
+        const date = dateCol?.value ? JSON.parse(dateCol.value)?.date || '' : '';
+        return { id: item.id, name: item.name, date, type: 'shoot' };
+      }).filter(s => s.date);
+
+    // Populate launch filter
+    const launchSel = document.getElementById('cal-filter-launch');
+    if (launchSel) {
+      launchSel.innerHTML = '<option value="">All Launches</option>' +
+        allLaunchData.map(l => `<option value="${l.name}">${l.name}</option>`).join('');
+    }
+
+    document.getElementById('calendar-section').style.display = '';
+    renderCalendar();
+  } catch(e) {
+    console.warn('Calendar data load failed:', e);
+  }
+}
+
+// ── CALENDAR RENDER ──
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+function toggleCalFilter(type) {
+  calFilters[type] = !calFilters[type];
+  const chip = document.getElementById(`fchip-${type}`);
+  if (chip) chip.classList.toggle('inactive', !calFilters[type]);
+  chip.classList.toggle('active', calFilters[type]);
+  renderCalendar();
+}
+
+function getCalEvents() {
+  const filterLaunch = document.getElementById('cal-filter-launch')?.value || '';
+  const events = [];
+  // Launch go-live dates
+  if (calFilters.launch) {
+    allLaunchData.forEach(l => {
+      if (!l.date) return;
+      if (filterLaunch && l.name !== filterLaunch) return;
+      events.push({ date: l.date, name: l.name, type: 'launch', data: l });
+    });
+  }
+  // EDMs
+  if (calFilters.edm) {
+    allEdms.forEach(e => {
+      events.push({ date: e.date, name: e.subject || e.name, type: 'edm', data: e });
+    });
+  }
+  // Shoots
+  if (calFilters.shoot) {
+    allShoots.forEach(s => {
+      events.push({ date: s.date, name: s.name, type: 'shoot', data: s });
+    });
+  }
+  return events;
+}
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${months[calMonth]} ${calYear}`;
+
+  const events = getCalEvents();
+  const byDate = {};
+  events.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  // First day of month - adjust to Monday start
+  const firstDay = new Date(calYear, calMonth, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  let html = '';
+  const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+  for (let cell = 0; cell < totalCells; cell++) {
+    let day, month, year, isOther = false;
+    if (cell < startOffset) {
+      day = daysInPrev - startOffset + cell + 1;
+      month = calMonth - 1; year = calYear;
+      if (month < 0) { month = 11; year--; }
+      isOther = true;
+    } else if (cell >= startOffset + daysInMonth) {
+      day = cell - startOffset - daysInMonth + 1;
+      month = calMonth + 1; year = calYear;
+      if (month > 11) { month = 0; year++; }
+      isOther = true;
+    } else {
+      day = cell - startOffset + 1;
+      month = calMonth; year = calYear;
+    }
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isToday = new Date(year, month, day).getTime() === today.getTime();
+    const dayEvents = byDate[dateStr] || [];
+
+    const MAX_SHOW = 3;
+    const shown = dayEvents.slice(0, MAX_SHOW);
+    const extra = dayEvents.length - MAX_SHOW;
+
+    html += `<div class="cal-day${isOther ? ' other-month' : ''}${isToday ? ' today' : ''}">
+      <div class="cal-day-num">${day}</div>
+      <div class="cal-events">
+        ${shown.map(e => `<div class="cal-event ${e.type}" onclick="showEventPreview(${JSON.stringify(JSON.stringify(e))})" title="${e.name}">${e.name}</div>`).join('')}
+        ${extra > 0 ? `<div class="cal-event more">+${extra} more</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('cal-days').innerHTML = html;
+}
+
+function showEventPreview(eJson) {
+  const e = JSON.parse(eJson);
+  const typeLabel = { launch: '🚀 Launch', edm: '📧 EDM', shoot: '📸 Shoot' }[e.type];
+  const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) : '-';
+
+  let rows = `<div class="event-preview-row"><span class="event-preview-label">Date</span><span class="event-preview-val">${fmtDate(e.date)}</span></div>`;
+
+  if (e.type === 'launch') {
+    if (e.data.time) rows += `<div class="event-preview-row"><span class="event-preview-label">Time</span><span class="event-preview-val">${e.data.time}</span></div>`;
+    rows += `<div class="event-preview-row"><span class="event-preview-label">Status</span><span class="event-preview-val" style="text-transform:capitalize">${e.data.status}</span></div>`;
+    if (e.data.openTasks > 0) rows += `<div class="event-preview-row"><span class="event-preview-label">Open tasks</span><span class="event-preview-val">${e.data.openTasks} remaining</span></div>`;
+  } else if (e.type === 'edm') {
+    if (e.data.status) rows += `<div class="event-preview-row"><span class="event-preview-label">Status</span><span class="event-preview-val">${e.data.status}</span></div>`;
+  } else if (e.type === 'shoot') {
+    rows += `<div class="event-preview-row"><span class="event-preview-label">Board</span><span class="event-preview-val">ASA / CBA Hub</span></div>`;
+  }
+
+  const action = e.type === 'launch'
+    ? `<a href="launch.html?launch=${encodeURIComponent(e.name)}" class="btn-primary" style="display:inline-block;text-decoration:none;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;background:var(--teal);color:var(--navy)">View Launch Hub →</a>`
+    : e.type === 'shoot'
+    ? `<a href="https://pafc-team.monday.com/boards/18412284375/views/256804294" target="_blank" class="btn-primary" style="display:inline-block;text-decoration:none;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;background:var(--navy);color:#fff">View in ASA Hub ↗</a>`
+    : `<a href="https://pafc-team.monday.com/boards/${LAUNCH_HUB_CONFIG.EDM_BOARD_ID}" target="_blank" class="btn-primary" style="display:inline-block;text-decoration:none;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;background:#6d28d9;color:#fff">View in Monday ↗</a>`;
+
+  openModal('', `<div class="event-preview">
+    <span class="event-preview-type ${e.type}">${typeLabel}</span>
+    <div class="event-preview-name">${e.name}</div>
+    ${rows}
+    <div class="event-preview-action">${action}</div>
+  </div>`, '');
+}
+
 // ── INIT ──
 async function init() {
   try {
     await initSDK();
     await loadHomeData();
     renderHome();
+    loadCalendarData(); // load async, don't block home render
   } catch(e) {
     document.getElementById('home-content').innerHTML = `
       <div style="background:var(--red-pale);border:1px solid #fecaca;border-radius:12px;padding:20px;text-align:center;color:var(--red)">
