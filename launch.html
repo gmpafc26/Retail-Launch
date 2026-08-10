@@ -1281,21 +1281,37 @@ async function saveGraphicIds() {
 function renderResources() {
   const items = state.resources;
 
-  // Helper to get live status from resource notes
+  // Website links: those with a portstore URL or flagged as website type via notes
+  // Asset links: everything else (graphics, photography, storytelling)
+  function getResourceType(item) {
+    const url = getCol(item, COLS.URL);
+    if (!url) return 'asset';
+    // Check notes for explicit type flag
+    try {
+      const n = getCol(item, COLS.NOTES);
+      if (n) {
+        const p = JSON.parse(n);
+        if (p?.type === 'website') return 'website';
+        if (p?.type === 'asset') return 'asset';
+      }
+    } catch {}
+    // Fallback: portstore URLs are website links
+    if (url.toLowerCase().includes('portstore') || url.toLowerCase().includes('portadelaidefc')) return 'website';
+    return 'asset';
+  }
+
   function isLive(item) {
     try { const n = getCol(item, COLS.NOTES); return n ? JSON.parse(n)?.live !== false : true; } catch { return true; }
   }
 
-  // Manual website links
-  const websiteItems = items.filter(i => getCol(i, COLS.URL));
-  const otherItems   = items.filter(i => !getCol(i, COLS.URL));
+  const websiteItems = items.filter(i => getResourceType(i) === 'website');
+  const assetItems   = items.filter(i => getResourceType(i) === 'asset');
 
-  function resourceRow(item) {
+  function websiteRow(item) {
     const url  = getCol(item, COLS.URL);
-    const icon = getLinkIcon(url);
     const live = isLive(item);
     return `<li class="link-item">
-      <span class="link-icon ${icon.cls}">${icon.emoji}</span>
+      <span class="link-icon">🔗</span>
       <span class="link-label-text">${item.name}</span>
       ${!live ? `<span class="not-live-badge">Not live yet</span>` : ''}
       ${url ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
@@ -1306,7 +1322,21 @@ function renderResources() {
     </li>`;
   }
 
-  // Product links — products with a URL auto-appear here
+  function assetRow(item) {
+    const url  = getCol(item, COLS.URL);
+    const icon = getLinkIcon(url);
+    return `<li class="link-item">
+      <span class="link-icon ${icon.cls}">${icon.emoji}</span>
+      <span class="link-label-text">${item.name}</span>
+      ${url ? `<a href="${url}" target="_blank" class="view-pill">View ↗</a>` : ''}
+      <div class="item-actions">
+        <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('${item.id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </li>`;
+  }
+
+  // Product links — auto-appear in website links section
   const productLinks = state.products.filter(p => getCol(p, COLS.BIGCOMMERCE_URL));
 
   function productRow(item) {
@@ -1332,12 +1362,12 @@ function renderResources() {
       ${hasWebsite ? `<div class="resource-group">
         <div class="resource-group-title">Website Links</div>
         <ul class="link-list">
-          ${websiteItems.map(resourceRow).join('')}
+          ${websiteItems.map(websiteRow).join('')}
           ${productLinks.map(productRow).join('')}
         </ul>
       </div>` : ''}
-      ${otherItems.length ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${otherItems.map(resourceRow).join('')}</ul></div>` : ''}
-      ${!hasWebsite && !otherItems.length ? `<div class="empty-state">No resources yet - add your first link above</div>` : ''}
+      ${assetItems.length ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${assetItems.map(assetRow).join('')}</ul></div>` : ''}
+      ${!hasWebsite && !assetItems.length ? `<div class="empty-state">No resources yet - add your first link above</div>` : ''}
     </div>
   </div>`;
 }
@@ -1467,13 +1497,15 @@ async function saveResourceItem(id) {
   const name  = document.getElementById('f-r-n').value.trim();
   const url   = document.getElementById('f-r-u').value.trim();
   const notes = document.getElementById('f-r-notes').value.trim();
-  const type  = document.getElementById('f-r-type').value;
+  const type  = document.getElementById('f-r-type').value; // 'website' or 'asset'
   if (!name) { toast('Name is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
+    // Store type and notes together as JSON in NOTES column
+    const notesPayload = JSON.stringify({ type, notes });
     await saveItem(id, 'resources', GROUPS.RESOURCES, name, {
       [COLS.URL]: url ? { url, text: name } : null,
-      [COLS.NOTES]: notes ? { text: notes } : null
+      [COLS.NOTES]: notesPayload
     });
     filterState(); render(); closeModal(); toast(id ? 'Updated' : 'Added', 'success');
   } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled=false; btn.textContent='Save'; }
