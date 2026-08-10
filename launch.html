@@ -60,6 +60,14 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .completed-dept-group{background:#fafbfc;border:1px solid var(--border);border-radius:10px;padding:12px 14px}
 .completed-dept-header{margin-bottom:8px;display:flex;align-items:center}
 .graphic-req-row:last-child{border-bottom:none;padding-bottom:0}
+.picker-list{border:1.5px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;background:#fff}
+.picker-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.picker-item:last-child{border-bottom:none}
+.picker-item:hover{background:var(--teal-pale)}
+.picker-item.selected{background:var(--teal-pale);border-left:3px solid var(--teal)}
+.picker-item--past{opacity:.7}
+.picker-item-name{display:block;font-size:13px;font-weight:500;color:var(--text)}
+.picker-item-meta{display:block;font-size:10px;color:var(--text-light);margin-top:2px}
 .graphic-req-name{font-size:13px;font-weight:600;color:var(--text);min-width:160px;flex-shrink:0}
 .graphic-req-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:11px;color:var(--text-mid);flex:1}
 .dept-manage-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:#fafbfc}
@@ -158,7 +166,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
 .welcome-btn:hover{background:var(--teal-dim)}
 
 /* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto}
 .modal-overlay.open{display:flex}
 .modal{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative;max-height:90vh;overflow-y:auto}
 .modal-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px}
@@ -1223,45 +1231,81 @@ function renderGraphicRequests() {
 function openGraphicPicker() {
   const filter = LAUNCH_HUB_CONFIG.GRAPHICS_DEPT_FILTER;
   const today = new Date(); today.setHours(0,0,0,0);
+  const fourWeeksAgo = new Date(today); fourWeeksAgo.setDate(today.getDate() - 28);
+
   const available = allGraphicRequests.filter(r => {
     if (linkedGraphicIds.includes(r.id)) return false;
+    // Dept must be Port Store or Marketing
     const dept = getGraphicCol(r, GCOLS.DEPARTMENT);
-    const deptMatch = !dept || filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
+    if (!dept) return false;
+    const deptMatch = filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
     if (!deptMatch) return false;
-    // Exclude items with a past due date
+    // Include if: no due date, due date is in future, or due date is within past 4 weeks
     const due = getGraphicCol(r, GCOLS.DUE_DATE);
-    if (due && new Date(due + 'T00:00:00') < today) return false;
+    if (due) {
+      const dueDate = new Date(due + 'T00:00:00');
+      if (dueDate < fourWeeksAgo) return false;
+    }
     return true;
+  }).sort((a, b) => {
+    const da = getGraphicCol(a, GCOLS.DUE_DATE) || '9999';
+    const db = getGraphicCol(b, GCOLS.DUE_DATE) || '9999';
+    return da.localeCompare(db);
   });
 
-  const optionsHTML = available.length
-    ? available.map(r => {
-        const due = getGraphicCol(r, GCOLS.DUE_DATE);
-        const d = due ? new Date(due + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short' }) : 'No date';
-        return `<option value="${r.id}">${r.name} - Due ${d}</option>`;
-      }).join('')
-    : `<option value="" disabled>No upcoming Marketing/Port Store requests available</option>`;
-
   openModal('Link Graphic Request',
-    `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Select a graphic design request from the Design Requests board. Only Marketing and Port Store department requests are shown. Details are read-only and update automatically from the source board.</p>
+    `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Showing Port Store and Marketing requests — future dates plus up to 4 weeks in the past.</p>
      <div class="form-group">
+       <label class="form-label">Search Requests</label>
+       <input class="form-input" id="f-graphic-search" placeholder="Type to filter..." oninput="filterGraphicOptions()" autocomplete="off">
+     </div>
+     <div class="form-group" style="margin-top:0">
        <label class="form-label">Select Request</label>
-       <select class="form-select" id="f-graphic-id">${optionsHTML}</select>
+       <div id="f-graphic-list" class="picker-list">
+         ${available.length ? available.map(r => {
+           const due = getGraphicCol(r, GCOLS.DUE_DATE);
+           const dept = getGraphicCol(r, GCOLS.DEPARTMENT);
+           const dLabel = due ? new Date(due + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short' }) : 'No date';
+           const isPast = due && new Date(due + 'T00:00:00') < today;
+           return `<div class="picker-item${isPast ? ' picker-item--past' : ''}" data-id="${r.id}" data-search="${r.name.toLowerCase()}" onclick="selectPickerItem(this,'f-graphic-id')">
+             <span class="picker-item-name">${r.name}</span>
+             <span class="picker-item-meta">${dept ? dept + ' · ' : ''}Due ${dLabel}${isPast ? ' · past' : ''}</span>
+           </div>`;
+         }).join('') : `<div style="padding:10px;color:var(--text-light);font-size:12px">No Port Store / Marketing requests found</div>`}
+       </div>
+       <input type="hidden" id="f-graphic-id">
      </div>`,
     `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
-     <button class="btn-primary" onclick="linkGraphic()" ${!available.length ? 'disabled' : ''}>Link Request</button>`);
+     <button class="btn-primary" id="btn-link-graphic" disabled onclick="linkGraphic()">Link Request</button>`);
+}
+
+function filterGraphicOptions() {
+  const q = document.getElementById('f-graphic-search')?.value.toLowerCase() || '';
+  document.querySelectorAll('#f-graphic-list .picker-item').forEach(el => {
+    el.style.display = el.dataset.search.includes(q) ? '' : 'none';
+  });
+}
+
+function selectPickerItem(el, hiddenId) {
+  document.querySelectorAll(`#f-graphic-list .picker-item, #f-video-list .picker-item`).forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  const hidden = document.getElementById(hiddenId);
+  if (hidden) hidden.value = el.dataset.id;
+  // Enable the link button
+  const btn = document.getElementById('btn-link-graphic') || document.getElementById('btn-link-video');
+  if (btn) btn.disabled = false;
 }
 
 async function linkGraphic() {
-  const id = document.getElementById('f-graphic-id').value;
-  if (!id) return;
-  const btn = document.querySelector('#modal-actions .btn-primary');
-  btn.disabled = true; btn.textContent = 'Linking...';
+  const id = document.getElementById('f-graphic-id')?.value;
+  if (!id) { toast('Please select a request first', 'error'); return; }
+  const btn = document.getElementById('btn-link-graphic');
+  if (btn) { btn.disabled = true; btn.textContent = 'Linking...'; }
   try {
     linkedGraphicIds = [...linkedGraphicIds, id];
     await saveGraphicIds();
     render(); closeModal(); toast('Graphic request linked', 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Link Request'; }
+  } catch(e) { toast('Error: ' + e.message, 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Link Request'; } }
 }
 
 async function unlinkGraphic(id) {
@@ -1281,39 +1325,31 @@ async function saveGraphicIds() {
 function renderResources() {
   const items = state.resources;
 
-  // Website links: those with a portstore URL or flagged as website type via notes
-  // Asset links: everything else (graphics, photography, storytelling)
-  function getResourceType(item) {
-    const url = getCol(item, COLS.URL);
-    if (!url) return 'asset';
-    // Check notes for explicit type flag
+  function getType(item) {
     try {
       const n = getCol(item, COLS.NOTES);
       if (n) {
         const p = JSON.parse(n);
         if (p?.type === 'website') return 'website';
-        if (p?.type === 'asset') return 'asset';
+        if (p?.type === 'resource') return 'resource';
+        // Legacy: had type+notes combined
+        if (p?.type === 'asset') return 'resource';
       }
     } catch {}
-    // Fallback: portstore URLs are website links
-    if (url.toLowerCase().includes('portstore') || url.toLowerCase().includes('portadelaidefc')) return 'website';
-    return 'asset';
+    // Fallback for old items with no type stored
+    const url = getCol(item, COLS.URL) || '';
+    return (url.includes('portstore') || url.includes('portadelaidefc')) ? 'website' : 'resource';
   }
 
-  function isLive(item) {
-    try { const n = getCol(item, COLS.NOTES); return n ? JSON.parse(n)?.live !== false : true; } catch { return true; }
-  }
+  const websiteItems  = items.filter(i => getType(i) === 'website');
+  const resourceItems = items.filter(i => getType(i) === 'resource');
 
-  const websiteItems = items.filter(i => getResourceType(i) === 'website');
-  const assetItems   = items.filter(i => getResourceType(i) === 'asset');
-
-  function websiteRow(item) {
-    const url  = getCol(item, COLS.URL);
-    const live = isLive(item);
+  function linkRow(item) {
+    const url = getCol(item, COLS.URL);
+    const icon = getLinkIcon(url);
     return `<li class="link-item">
-      <span class="link-icon">🔗</span>
+      <span class="link-icon ${icon.cls}">${icon.emoji}</span>
       <span class="link-label-text">${item.name}</span>
-      ${!live ? `<span class="not-live-badge">Not live yet</span>` : ''}
       ${url ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
       <div class="item-actions">
         <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
@@ -1322,39 +1358,23 @@ function renderResources() {
     </li>`;
   }
 
-  function assetRow(item) {
-    const url  = getCol(item, COLS.URL);
-    const icon = getLinkIcon(url);
-    return `<li class="link-item">
-      <span class="link-icon ${icon.cls}">${icon.emoji}</span>
-      <span class="link-label-text">${item.name}</span>
-      ${url ? `<a href="${url}" target="_blank" class="view-pill">View ↗</a>` : ''}
-      <div class="item-actions">
-        <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
-        <button class="btn-delete" onclick="confirmDelete('${item.id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
-      </div>
-    </li>`;
-  }
-
-  // Product links — auto-appear in website links section
+  // Products with URLs auto-appear in Website Links
   const productLinks = state.products.filter(p => getCol(p, COLS.BIGCOMMERCE_URL));
-
   function productRow(item) {
     const url = getCol(item, COLS.BIGCOMMERCE_URL);
     const img = getCol(item, COLS.URL);
     let live = false;
     try { const n = getCol(item, COLS.NOTES); live = n ? JSON.parse(n)?.live === true : false; } catch {}
-    return `<li class="link-item link-item--product">
-      ${img
-        ? `<img src="${img}" style="width:32px;height:32px;object-fit:cover;border-radius:5px;flex-shrink:0" onerror="this.style.display='none'">`
-        : `<span class="link-icon">👕</span>`}
+    return `<li class="link-item">
+      ${img ? `<img src="${img}" style="width:32px;height:32px;object-fit:cover;border-radius:5px;flex-shrink:0" onerror="this.style.display='none'">` : `<span class="link-icon">👕</span>`}
       <span class="link-label-text">${item.name}</span>
       ${!live ? `<span class="not-live-badge">Not live yet</span>` : ''}
       <button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>
     </li>`;
   }
 
-  const hasWebsite = websiteItems.length || productLinks.length;
+  const hasWebsite  = websiteItems.length || productLinks.length;
+  const hasResource = resourceItems.length;
 
   return `<div class="card">
     <div class="card-header"><span class="card-icon">🔗</span><span class="card-title">Resources</span><button class="card-add-btn" onclick="addResourceItem()">+ Add Link</button></div>
@@ -1362,12 +1382,15 @@ function renderResources() {
       ${hasWebsite ? `<div class="resource-group">
         <div class="resource-group-title">Website Links</div>
         <ul class="link-list">
-          ${websiteItems.map(websiteRow).join('')}
+          ${websiteItems.map(linkRow).join('')}
           ${productLinks.map(productRow).join('')}
         </ul>
       </div>` : ''}
-      ${assetItems.length ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${assetItems.map(assetRow).join('')}</ul></div>` : ''}
-      ${!hasWebsite && !assetItems.length ? `<div class="empty-state">No resources yet - add your first link above</div>` : ''}
+      ${hasResource ? `<div class="resource-group">
+        <div class="resource-group-title">Resources</div>
+        <ul class="link-list">${resourceItems.map(linkRow).join('')}</ul>
+      </div>` : ''}
+      ${!hasWebsite && !hasResource ? `<div class="empty-state">No links yet - add your first link above</div>` : ''}
     </div>
   </div>`;
 }
@@ -1476,36 +1499,33 @@ async function saveTimelineItem(id) {
 
 // ── RESOURCE CRUD ──
 function resForm(item) {
-  const isWebsite = !item || item.group?.id === GROUPS.RESOURCES;
-  const url    = item ? getCol(item, COLS.URL) : '';
-  const bcUrl  = item ? getCol(item, COLS.BIGCOMMERCE_URL) : '';
-  const notes  = item ? getCol(item, COLS.NOTES) : '';
+  const url = item ? getCol(item, COLS.URL) : '';
+  let isWebsite = false;
+  if (item) {
+    try { const n = getCol(item, COLS.NOTES); isWebsite = n ? JSON.parse(n)?.type === 'website' : false; } catch {}
+  }
   return `
-    <div class="form-group"><label class="form-label">Link Name</label><input class="form-input" id="f-r-n" value="${item?.name||''}" placeholder="e.g. Port Store Product Page"></div>
-    <div class="form-group"><label class="form-label">URL</label><input class="form-input" id="f-r-u" value="${url}" placeholder="https://..."></div>
-    <div class="form-group"><label class="form-label">Type</label>
+    <div class="form-group"><label class="form-label">Link Name</label><input class="form-input" id="f-r-n" value="${(item?.name||'').replace(/"/g,'&quot;')}" placeholder="e.g. AWDS Upload Template"></div>
+    <div class="form-group"><label class="form-label">URL</label><input class="form-input" id="f-r-u" value="${url.replace(/"/g,'&quot;')}" placeholder="https://..."></div>
+    <div class="form-group"><label class="form-label">Section</label>
       <select class="form-select" id="f-r-type">
-        <option value="website" ${!item || item.group?.id === GROUPS.RESOURCES ? 'selected':''}>Website Link</option>
-        <option value="asset" ${item && item.group?.id !== GROUPS.RESOURCES ? 'selected':''}>Asset Link (Graphics/Photography/Storytelling)</option>
+        <option value="resource" ${!isWebsite ? 'selected' : ''}>Resources</option>
+        <option value="website" ${isWebsite ? 'selected' : ''}>Website Links</option>
       </select>
-    </div>
-    <div class="form-group"><label class="form-label">Notes / Label</label><input class="form-input" id="f-r-notes" value="${notes}" placeholder="e.g. Not live yet"></div>`;
+    </div>`;
 }
-function addResourceItem() { openModal('Add Resource Link', resForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem(null)">Add Link</button>`); }
-function editResourceItem(id) { const item = state.resources.find(i=>i.id===id); openModal('Edit Resource Link', resForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem('${id}')">Save</button>`); }
+function addResourceItem() { openModal('Add Link', resForm(null), `<button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem(null)">Add Link</button>`); }
+function editResourceItem(id) { const item = state.resources.find(i=>i.id===id); openModal('Edit Link', resForm(item), `<button class="btn-danger" onclick="confirmDelete('${id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button><button class="btn-secondary" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveResourceItem('${id}')">Save</button>`); }
 async function saveResourceItem(id) {
-  const name  = document.getElementById('f-r-n').value.trim();
-  const url   = document.getElementById('f-r-u').value.trim();
-  const notes = document.getElementById('f-r-notes').value.trim();
-  const type  = document.getElementById('f-r-type').value; // 'website' or 'asset'
+  const name = document.getElementById('f-r-n').value.trim();
+  const url  = document.getElementById('f-r-u').value.trim();
+  const type = document.getElementById('f-r-type').value; // 'website' or 'resource'
   if (!name) { toast('Name is required', 'error'); return; }
   const btn = document.querySelector('#modal-actions .btn-primary'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    // Store type and notes together as JSON in NOTES column
-    const notesPayload = JSON.stringify({ type, notes });
     await saveItem(id, 'resources', GROUPS.RESOURCES, name, {
       [COLS.URL]: url ? { url, text: name } : null,
-      [COLS.NOTES]: notesPayload
+      [COLS.NOTES]: JSON.stringify({ type })
     });
     filterState(); render(); closeModal(); toast(id ? 'Updated' : 'Added', 'success');
   } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled=false; btn.textContent='Save'; }
