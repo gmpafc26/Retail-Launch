@@ -1231,30 +1231,24 @@ function renderGraphicRequests() {
 function openGraphicPicker() {
   const filter = LAUNCH_HUB_CONFIG.GRAPHICS_DEPT_FILTER;
   const today = new Date(); today.setHours(0,0,0,0);
-  const fourWeeksAgo = new Date(today); fourWeeksAgo.setDate(today.getDate() - 28);
 
   const available = allGraphicRequests.filter(r => {
     if (linkedGraphicIds.includes(r.id)) return false;
-    // Dept must be Port Store or Marketing
+    // Dept must be Port Store, Marketing, Retail, or blank (untagged)
     const dept = getGraphicCol(r, GCOLS.DEPARTMENT);
-    if (!dept) return false;
-    const deptMatch = filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
-    if (!deptMatch) return false;
-    // Include if: no due date, due date is in future, or due date is within past 4 weeks
-    const due = getGraphicCol(r, GCOLS.DUE_DATE);
-    if (due) {
-      const dueDate = new Date(due + 'T00:00:00');
-      if (dueDate < fourWeeksAgo) return false;
+    if (dept) {
+      const deptMatch = filter.some(f => dept.toLowerCase().includes(f.toLowerCase()));
+      if (!deptMatch) return false;
     }
     return true;
   }).sort((a, b) => {
     const da = getGraphicCol(a, GCOLS.DUE_DATE) || '9999';
     const db = getGraphicCol(b, GCOLS.DUE_DATE) || '9999';
-    return da.localeCompare(db);
+    return db.localeCompare(da);
   });
 
   openModal('Link Graphic Request',
-    `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Showing Port Store and Marketing requests — future dates plus up to 4 weeks in the past.</p>
+    `<p style="font-size:12px;color:var(--text-mid);margin-bottom:14px">Showing all Port Store and Marketing requests including completed ones. Search by name to find a specific request.</p>
      <div class="form-group">
        <label class="form-label">Search Requests</label>
        <input class="form-input" id="f-graphic-search" placeholder="Type to filter..." oninput="filterGraphicOptions()" autocomplete="off">
