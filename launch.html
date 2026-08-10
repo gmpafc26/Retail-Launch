@@ -1280,29 +1280,64 @@ async function saveGraphicIds() {
 
 function renderResources() {
   const items = state.resources;
-  const websiteItems = items.filter(i => (getCol(i, COLS.URL)||'').includes('portstore'));
-  const otherItems   = items.filter(i => !(getCol(i, COLS.URL)||'').includes('portstore'));
-  function row(item) {
-    const url = getCol(item, COLS.URL);
+
+  // Helper to get live status from resource notes
+  function isLive(item) {
+    try { const n = getCol(item, COLS.NOTES); return n ? JSON.parse(n)?.live !== false : true; } catch { return true; }
+  }
+
+  // Manual website links
+  const websiteItems = items.filter(i => getCol(i, COLS.URL));
+  const otherItems   = items.filter(i => !getCol(i, COLS.URL));
+
+  function resourceRow(item) {
+    const url  = getCol(item, COLS.URL);
     const icon = getLinkIcon(url);
-    const isPS = url && url.includes('portstore');
+    const live = isLive(item);
     return `<li class="link-item">
       <span class="link-icon ${icon.cls}">${icon.emoji}</span>
       <span class="link-label-text">${item.name}</span>
-      ${url && isPS  ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
-      ${url && !isPS ? `<a href="${url}" target="_blank" class="view-pill">View ↗</a>` : ''}
+      ${!live ? `<span class="not-live-badge">Not live yet</span>` : ''}
+      ${url ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
       <div class="item-actions">
         <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
         <button class="btn-delete" onclick="confirmDelete('${item.id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </li>`;
   }
+
+  // Product links — products with a URL auto-appear here
+  const productLinks = state.products.filter(p => getCol(p, COLS.BIGCOMMERCE_URL));
+
+  function productRow(item) {
+    const url = getCol(item, COLS.BIGCOMMERCE_URL);
+    const img = getCol(item, COLS.URL);
+    let live = false;
+    try { const n = getCol(item, COLS.NOTES); live = n ? JSON.parse(n)?.live === true : false; } catch {}
+    return `<li class="link-item link-item--product">
+      ${img
+        ? `<img src="${img}" style="width:32px;height:32px;object-fit:cover;border-radius:5px;flex-shrink:0" onerror="this.style.display='none'">`
+        : `<span class="link-icon">👕</span>`}
+      <span class="link-label-text">${item.name}</span>
+      ${!live ? `<span class="not-live-badge">Not live yet</span>` : ''}
+      <button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>
+    </li>`;
+  }
+
+  const hasWebsite = websiteItems.length || productLinks.length;
+
   return `<div class="card">
     <div class="card-header"><span class="card-icon">🔗</span><span class="card-title">Resources</span><button class="card-add-btn" onclick="addResourceItem()">+ Add Link</button></div>
     <div class="card-body">
-      ${websiteItems.length ? `<div class="resource-group"><div class="resource-group-title">Website Links <span class="not-live-badge">⚠ Not live yet</span></div><ul class="link-list">${websiteItems.map(row).join('')}</ul></div>` : ''}
-      ${otherItems.length   ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${otherItems.map(row).join('')}</ul></div>` : ''}
-      ${!items.length ? `<div class="empty-state">No resources yet - add your first link above</div>` : ''}
+      ${hasWebsite ? `<div class="resource-group">
+        <div class="resource-group-title">Website Links</div>
+        <ul class="link-list">
+          ${websiteItems.map(resourceRow).join('')}
+          ${productLinks.map(productRow).join('')}
+        </ul>
+      </div>` : ''}
+      ${otherItems.length ? `<div class="resource-group"><div class="resource-group-title">Graphics, Photography &amp; Storytelling</div><ul class="link-list">${otherItems.map(resourceRow).join('')}</ul></div>` : ''}
+      ${!hasWebsite && !otherItems.length ? `<div class="empty-state">No resources yet - add your first link above</div>` : ''}
     </div>
   </div>`;
 }
@@ -1458,9 +1493,27 @@ function previewProductImage(input) {
 
 function prodForm(item) {
   const hasImg = item ? !!getCol(item, COLS.URL) : false;
+  const existingUrl = item ? getCol(item, COLS.BIGCOMMERCE_URL) : '';
+  // Live status stored in product notes as JSON
+  let isLive = false;
+  if (item) {
+    try { const n = getCol(item, COLS.NOTES); isLive = n ? JSON.parse(n)?.live === true : false; } catch {}
+  }
   return `
-    <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="f-p-n" value="${item?.name||''}" placeholder="e.g. PA Macron 2026 Guernsey - Adult"></div>
-    <div class="form-group"><label class="form-label">Port Store URL</label><input class="form-input" id="f-p-u" value="${item ? getCol(item,COLS.BIGCOMMERCE_URL) : ''}" placeholder="https://portstore.com.au/..."></div>
+    <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="f-p-n" value="${(item?.name||'').replace(/"/g,'&quot;')}" placeholder="e.g. PA Macron 2026 Guernsey - Adult"></div>
+    <div class="form-group"><label class="form-label">Port Store URL</label><input class="form-input" id="f-p-u" value="${existingUrl.replace(/"/g,'&quot;')}" placeholder="https://portstore.com.au/..."></div>
+    <div class="form-group">
+      <label class="form-label">Link Status</label>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text)">
+          <input type="radio" name="f-p-live" id="f-p-live-yes" value="live" ${isLive ? 'checked' : ''} style="accent-color:var(--green)"> 🟢 Live
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text)">
+          <input type="radio" name="f-p-live" id="f-p-live-no" value="notlive" ${!isLive ? 'checked' : ''} style="accent-color:var(--amber)"> 🟡 Not live yet
+        </label>
+      </div>
+      <p style="font-size:11px;color:var(--text-light);margin-top:4px">This controls the badge shown in Website Links</p>
+    </div>
     <div class="form-group">
       <label class="form-label">Product Image</label>
       ${hasImg ? '<p style="font-size:11px;color:var(--green);margin-bottom:6px">✓ Image uploaded - choose a new file to replace it</p>' : ''}
@@ -1511,9 +1564,11 @@ async function saveProductItem(id) {
     // Keep existing image if no new file chosen
     const existingImg = id ? getCol(state.products.find(i=>i.id===id), COLS.URL) : null;
     const finalImg = imgBase64 || existingImg;
+    const isLive = document.querySelector('input[name="f-p-live"]:checked')?.value === 'live';
     await saveItem(id,'products',GROUPS.PRODUCTS, name, {
       [COLS.BIGCOMMERCE_URL]: url ? {url, text: name} : null,
-      [COLS.URL]: finalImg ? {url: finalImg, text: 'Image'} : null
+      [COLS.URL]: finalImg ? {url: finalImg, text: 'Image'} : null,
+      [COLS.NOTES]: JSON.stringify({ live: isLive })
     });
     render(); closeModal(); toast(id?'Product updated':'Product added','success');
   } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Save'; }
