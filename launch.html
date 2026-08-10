@@ -343,7 +343,7 @@ body{background:var(--body-bg);color:var(--text);font-family:'Inter',sans-serif;
       <div class="hero-date-main" id="hero-date">-</div>
       <div class="hero-time"><span class="dot"></span><span id="hero-time">-</span></div>
     </div>
-    <button class="hero-edit-btn" id="hero-edit-btn" style="display:none">✏️ Edit</button>
+    <button class="hero-edit-btn" id="hero-edit-btn" onclick="editLaunchInfo()" style="display:none">✏️ Edit</button>
   </div>
   <div id="content">
     <div class="loading-state"><div class="loading-spinner"></div><div>Loading launches...</div></div>
@@ -1330,6 +1330,56 @@ function renderProducts() {
     <div class="card-header"><span class="card-icon">👕</span><span class="card-title">Full Product Assortment</span><button class="card-add-btn" onclick="addProductItem()">+ Add Product</button></div>
     <div class="card-body"><div class="product-grid">${cardsHTML}</div></div>
   </div>`;
+}
+
+function editLaunchInfo() {
+  try {
+    const launch = state.launch;
+    const date  = launch ? (getCol(launch, COLS.LAUNCH_DATE) || '') : '';
+    const time  = launch ? (getCol(launch, COLS.LAUNCH_TIME) || '') : '';
+    const owner = launch ? (getCol(launch, COLS.OWNER) || '') : '';
+    openModal('Edit Launch Details', `
+      <div class="form-group"><label class="form-label">Launch Name</label><input class="form-input" id="f-li-name" value="${(currentLaunch || '').replace(/"/g,'&quot;')}" placeholder="e.g. Prison Bar 2026"></div>
+      <div class="form-group"><label class="form-label">Launch Date</label><input class="form-input" id="f-li-date" type="date" value="${date}"></div>
+      <div class="form-group"><label class="form-label">Launch Time</label><input class="form-input" id="f-li-time" value="${time.replace(/"/g,'&quot;')}" placeholder="e.g. 10:00am"></div>
+      <div class="form-group"><label class="form-label">Owner</label><input class="form-input" id="f-li-owner" value="${owner.replace(/"/g,'&quot;')}" placeholder="e.g. Georgie"></div>`,
+      `<button class="btn-secondary" onclick="closeModal()">Cancel</button>
+       <button class="btn-primary" onclick="saveLaunchInfo()">Save</button>`);
+  } catch(e) { toast('Error opening editor: ' + e.message, 'error'); }
+}
+
+async function saveLaunchInfo() {
+  const name  = document.getElementById('f-li-name').value.trim();
+  const date  = document.getElementById('f-li-date').value;
+  const time  = document.getElementById('f-li-time').value.trim();
+  const owner = document.getElementById('f-li-owner').value.trim();
+  if (!name) { toast('Launch name is required', 'error'); return; }
+  const btn = document.querySelector('#modal-actions .btn-primary');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const launch = state.launch;
+    if (launch) {
+      const updated = await updateItem(launch.id, {
+        [COLS.LAUNCH_DATE]: date ? { date } : null,
+        [COLS.LAUNCH_TIME]: time,
+        [COLS.OWNER]: owner
+      });
+      // Update name if changed
+      const oldName = currentLaunch;
+      if (name !== oldName) {
+        await updateName(launch.id, name);
+        const launchItems = allItems.filter(i => getCol(i, COLS.LAUNCH) === oldName);
+        await Promise.all(launchItems.map(i => updateItem(i.id, { [COLS.LAUNCH]: name })));
+        currentLaunch = name;
+        launches = launches.map(l => l === oldName ? name : l);
+        populateSelector();
+      }
+      launch.column_values = updated.column_values;
+      launch.name = name;
+      cacheSet('launch', allItems);
+    }
+    filterState(); render(); closeModal(); toast('Launch details saved', 'success');
+  } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled = false; btn.textContent = 'Save'; }
 }
 
 // ── TIMELINE CRUD ──
