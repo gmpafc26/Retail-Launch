@@ -627,7 +627,7 @@ async function loadAll() {
   // External boards always fetch fresh — changes in source boards appear immediately
   const externalFetches = [
     mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`),
-    mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
+    mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`),
     mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`)
   ];
   if (!launchItems) {
@@ -644,7 +644,13 @@ async function loadAll() {
 
   allItems = launchItems;
   allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
-  allGraphicRequests = graphicsData.boards[0].items_page.items;
+  const graphicsPage1 = graphicsData.boards[0].items_page;
+  allGraphicRequests = graphicsPage1.items;
+  if (graphicsPage1.cursor) {
+    mondayQuery(`{ next_items_page(limit: 500, cursor: "${graphicsPage1.cursor}") { cursor items { id name group { id } column_values { id value text } } } }`)
+      .then(gp2 => { allGraphicRequests = [...allGraphicRequests, ...gp2.next_items_page.items]; })
+      .catch(() => {});
+  }
 
   const videoPage1 = videoData.boards[0].items_page;
   allVideoRequests = videoPage1.items;
@@ -1155,19 +1161,17 @@ async function saveVideoIds() {
 
 function getGraphicCol(item, colId) {
   const col = item.column_values?.find(c => c.id === colId);
-  if (!col || !col.value || col.value === 'null') return '';
+  if (!col) return '';
+  // Always try col.text first as it's the most reliable across column types
+  if (col.text && col.text.trim()) return col.text.trim();
+  if (!col.value || col.value === 'null') return '';
   try {
     const p = JSON.parse(col.value);
     if (p === null) return '';
     if (colId === GCOLS.REQUESTED_DATE || colId === GCOLS.DUE_DATE) return p.date || '';
-    if (colId === GCOLS.STATUS) return p.label || col.text || '';
-    if (colId === GCOLS.DEPARTMENT) return p.label || col.text || '';
-    if (colId === GCOLS.ASSET_FILES) {
-      // Extract URLs from files column text (comma separated)
-      return col.text || '';
-    }
-    return col.text || '';
-  } catch { return col.text || ''; }
+    if (colId === GCOLS.STATUS || colId === GCOLS.DEPARTMENT) return p.label || p.text || '';
+    return '';
+  } catch { return ''; }
 }
 
 function graphicStatusStyle(status) {
@@ -2482,7 +2486,7 @@ async function init() {
       try {
         const [shootData, graphicsData, videoData] = await Promise.all([
           mondayQuery(`{ boards(ids: [${SHOOT_BOARD_ID}]) { items_page(limit: 200) { items { id name group { id } column_values { id value text } } } } }`),
-          mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`),
+          mondayQuery(`{ boards(ids: [${GRAPHICS_BOARD_ID}]) { items_page(limit: 500) { cursor items { id name group { id } column_values { id value text } } } } }`),
           mondayQuery(`{ boards(ids: [${VIDEO_BOARD_ID}]) { items_page(limit: 500) { items { id name group { id } column_values { id value text } } } } }`)
         ]);
         allShoots = shootData.boards[0].items_page.items.filter(i => i.group.id === LAUNCH_HUB_CONFIG.SHOOT_GROUPS.REQUESTS);
