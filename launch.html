@@ -1338,13 +1338,27 @@ function renderResources() {
   const websiteItems  = items.filter(i => getType(i) === 'website');
   const resourceItems = items.filter(i => getType(i) === 'resource');
 
-  function linkRow(item) {
+  function websiteLinkRow(item) {
     const url = getCol(item, COLS.URL);
     const icon = getLinkIcon(url);
     return `<li class="link-item">
       <span class="link-icon ${icon.cls}">${icon.emoji}</span>
       <span class="link-label-text">${item.name}</span>
       ${url ? `<button class="copy-btn" onclick="copyLink(this,'${url}')">Copy Link</button>` : ''}
+      <div class="item-actions">
+        <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('${item.id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </li>`;
+  }
+
+  function linkRow(item) {
+    const url = getCol(item, COLS.URL);
+    const icon = getLinkIcon(url);
+    return `<li class="link-item">
+      <span class="link-icon ${icon.cls}">${icon.emoji}</span>
+      <span class="link-label-text">${item.name}</span>
+      ${url ? `<a href="${url}" target="_blank" class="view-pill">Visit ↗</a>` : ''}
       <div class="item-actions">
         <button class="btn-edit" onclick="editResourceItem('${item.id}')">Edit</button>
         <button class="btn-delete" onclick="confirmDelete('${item.id}','resources','${item.name.replace(/'/g,"\\'")}')">Delete</button>
@@ -1376,7 +1390,7 @@ function renderResources() {
       ${hasWebsite ? `<div class="resource-group">
         <div class="resource-group-title">Website Links</div>
         <ul class="link-list">
-          ${websiteItems.map(linkRow).join('')}
+          ${websiteItems.map(websiteLinkRow).join('')}
           ${productLinks.map(productRow).join('')}
         </ul>
       </div>` : ''}
